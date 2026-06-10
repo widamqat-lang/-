@@ -12,29 +12,40 @@ const db = new sqlite3.Database('./database.db', (err) => {
 
 // Clean corrupted flag data on startup
 db.serialize(() => {
-    db.all("SELECT id, home_team_flag, away_team_flag FROM matches WHERE home_team_flag LIKE '%<img%' OR away_team_flag LIKE '%<img%'", [], (err, rows) => {
+    db.all("SELECT id, home_team_flag, away_team_flag FROM matches", [], (err, rows) => {
         if (err) console.error('Error checking flags:', err.message);
         else if (rows.length > 0) {
-            console.log(`Found ${rows.length} matches with corrupted flags, cleaning...`);
+            let corruptedCount = 0;
             rows.forEach(row => {
                 const cleanHome = extractCleanUrl(row.home_team_flag);
                 const cleanAway = extractCleanUrl(row.away_team_flag);
-                db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
-                    [cleanHome, cleanAway, row.id], (err) => {
-                        if (err) console.error('Error cleaning flag:', err.message);
-                    });
+                // Only update if we found a clean URL and it's different from the current value
+                if ((cleanHome && cleanHome !== row.home_team_flag) || (cleanAway && cleanAway !== row.away_team_flag)) {
+                    corruptedCount++;
+                    db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
+                        [cleanHome || row.home_team_flag, cleanAway || row.away_team_flag, row.id], (err) => {
+                            if (err) console.error('Error cleaning flag:', err.message);
+                        });
+                }
             });
-            console.log('Flags cleaned successfully');
+            if (corruptedCount > 0) {
+                console.log(`Cleaned ${corruptedCount} matches with corrupted flags`);
+            }
         }
     });
 });
 
-// Helper to extract clean URL
+// Helper to extract clean URL from corrupted flag data
 function extractCleanUrl(flagUrl) {
     if (!flagUrl) return '';
-    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)/);
+    // Handle HTML img tags like <img src="https://flagcdn.com/w80/mx.png" ...>
+    const imgMatch = String(flagUrl).match(/src=["']([^"']*flagcdn[^"']+\.(png|jpg|svg)[^"']*)["']/i);
+    if (imgMatch) return imgMatch[1];
+    // Handle raw URLs
+    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)/);
     if (urlMatch) return urlMatch[0];
-    if (/^https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
+    // Check if it's already a clean URL
+    if (/^https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
     return '';
 }
 
@@ -45,28 +56,17 @@ const sanitizeFlags = (req, res, next) => {
         if (Array.isArray(data)) {
             data = data.map(item => ({
                 ...item,
-                home_team_flag: sanitizeFlagUrl(item.home_team_flag),
-                away_team_flag: sanitizeFlagUrl(item.away_team_flag)
+                home_team_flag: extractCleanUrl(item.home_team_flag),
+                away_team_flag: extractCleanUrl(item.away_team_flag)
             }));
         } else if (data && typeof data === 'object') {
-            data.home_team_flag = sanitizeFlagUrl(data.home_team_flag);
-            data.away_team_flag = sanitizeFlagUrl(data.away_team_flag);
+            data.home_team_flag = extractCleanUrl(data.home_team_flag);
+            data.away_team_flag = extractCleanUrl(data.away_team_flag);
         }
         return originalJson(data);
     };
     next();
 };
-
-// Helper to extract clean URL from corrupted flag data
-function sanitizeFlagUrl(flagUrl) {
-    if (!flagUrl) return '';
-    // Extract clean URL from HTML or corrupted text
-    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)/);
-    if (urlMatch) return urlMatch[0];
-    // Check if it's already a clean URL
-    if (/^https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
-    return '';
-}
 
 // Use sanitization middleware for API routes
 app.use('/api', sanitizeFlags);
