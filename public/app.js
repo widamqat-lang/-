@@ -852,10 +852,6 @@ async function renderAdminMatches() {
     
     try {
         const matches = await fetchAPI('/matches');
-        const stadiums = await fetchAPI('/stadiums');
-        const stadiumsMap = {};
-        stadiums.forEach(s => stadiumsMap[s.id] = s);
-        
         const container = document.getElementById('matches-list');
         container.innerHTML = `
             <table style="width: 100%; border-collapse: collapse;">
@@ -873,8 +869,7 @@ async function renderAdminMatches() {
                 </thead>
                 <tbody>
                     ${matches.map((match, index) => {
-                        const stadium = stadiumsMap[match.stadium_id] || null;
-                        const stadiumName = stadium ? (state.language === 'ar' ? stadium.nameAr : stadium.name) : match.stadium;
+                        const stadiumName = state.language === 'ar' ? (match.stadium_ar || match.stadium) : match.stadium;
                         return `
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 10px; text-align: center;">
