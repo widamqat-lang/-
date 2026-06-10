@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل المشروع</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .files {
+            margin-top: 30px;
+            text-align: right;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .files h3 { margin-bottom: 15px; color: #333; }
+        .file-list {
+            text-align: right;
+            font-size: 14px;
+            color: #666;
+        }
+        .file-list li { margin: 8px 0; }
+        code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ FIFA World Cup 2026</h1>
+        <p>مشروع نظام بيع التذاكر</p>
+        
+        <a href="/world-cup-hub.tar.gz" download="world-cup-hub.tar.gz" class="btn">
+            ⬇️ تحميل المشروع
+        </a>
+        
+        <div class="files">
+            <h3>📁 محتويات المشروع:</h3>
+            <ul class="file-list">
+                <li><code>server.js</code> - السيرفر</li>
+                <li><code>package.json</code> - الإعدادات</li>
+                <li><code>database.db</code> - قاعدة البيانات</li>
+                <li><code>public/</code> - الواجهة</li>
+            </ul>
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 12px; color: #999;">
+            الحجم: ~106 KB (مضغوط)
+        </p>
+    </div>
+    
+    <script>
+        // Auto-click download after 1 second
+        setTimeout(() => {
+            const link = document.createElement('a');
+            link.href = '/world-cup-hub.tar.gz';
+            link.download = 'world-cup-hub.tar.gz';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }, 1000);
+    </script>
+</body>
+</html>
