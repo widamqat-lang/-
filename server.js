@@ -14,6 +14,17 @@ const db = new sqlite3.Database('./database.db', (err) => {
 // REAL-TIME VISITOR TRACKING SYSTEM
 // ==========================================
 
+// Helper function to extract clean URL (must be defined first)
+function extractCleanUrl(flagUrl) {
+    if (!flagUrl) return '';
+    const imgMatch = String(flagUrl).match(/src=["']([^"']*flagcdn[^"']+\.(png|jpg|svg)[^"']*)["']/i);
+    if (imgMatch) return imgMatch[1];
+    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)/);
+    if (urlMatch) return urlMatch[0];
+    if (/^https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
+    return '';
+}
+
 // In-memory store for active users
 const activeUsers = {};
 const sseClients = [];
@@ -202,20 +213,6 @@ db.serialize(() => {
         }
     });
 });
-
-// Helper to extract clean URL from corrupted flag data
-function extractCleanUrl(flagUrl) {
-    if (!flagUrl) return '';
-    // Handle HTML img tags like <img src="https://flagcdn.com/w80/mx.png" ...>
-    const imgMatch = String(flagUrl).match(/src=["']([^"']*flagcdn[^"']+\.(png|jpg|svg)[^"']*)["']/i);
-    if (imgMatch) return imgMatch[1];
-    // Handle raw URLs
-    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)/);
-    if (urlMatch) return urlMatch[0];
-    // Check if it's already a clean URL
-    if (/^https:\/\/flagcdn\.com\/[^\s"'>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
-    return '';
-}
 
 // Flag sanitization for match endpoints only
 app.use('/api/matches', (req, res, next) => {
