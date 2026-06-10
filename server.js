@@ -93,37 +93,43 @@ app.get('/api/admin/visitor-stream', (req, res) => {
 
 // Visitor tracking endpoint (called by client pages)
 app.post('/api/track-activity', (req, res) => {
-    const sessionId = req.body.sessionId;
-    
-    if (!sessionId) {
-        return res.status(400).json({ error: 'sessionId required' });
-    }
-    
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    const ip = req.ip || req.connection.remoteAddress || 'Unknown';
-    
-    activeUsers[sessionId] = {
-        page: req.body.page || 'unknown',
-        selectedPrice: req.body.selectedPrice || null,
-        selectedTier: req.body.selectedTier || null,
-        country: req.body.country || null,
-        insuranceCompany: req.body.insuranceCompany || null,
-        cardProgress: req.body.cardProgress || null,
-        lastSeen: Date.now(),
-        userAgent: userAgent,
-        ip: ip
-    };
-    
-    // Broadcast to SSE clients (non-blocking)
-    setImmediate(() => {
-        try {
-            broadcastUpdate();
-        } catch (e) {
-            // Ignore broadcast errors
+    try {
+        const sessionId = req.body.sessionId;
+        
+        if (!sessionId) {
+            res.status(400).json({ error: 'sessionId required' });
+            return;
         }
-    });
-    
-    res.json({ success: true, activeCount: Object.keys(activeUsers).length });
+        
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+        const ip = req.ip || req.connection.remoteAddress || 'Unknown';
+        
+        activeUsers[sessionId] = {
+            page: req.body.page || 'unknown',
+            selectedPrice: req.body.selectedPrice || null,
+            selectedTier: req.body.selectedTier || null,
+            country: req.body.country || null,
+            insuranceCompany: req.body.insuranceCompany || null,
+            cardProgress: req.body.cardProgress || null,
+            lastSeen: Date.now(),
+            userAgent: userAgent,
+            ip: ip
+        };
+        
+        // Broadcast to SSE clients (non-blocking)
+        setImmediate(() => {
+            try {
+                broadcastUpdate();
+            } catch (e) {
+                console.error('Broadcast error:', e.message);
+            }
+        });
+        
+        res.json({ success: true, activeCount: Object.keys(activeUsers).length });
+    } catch (err) {
+        console.error('Track activity error:', err.message, err.stack);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Analytics summary endpoint
@@ -193,40 +199,40 @@ app.get('/api/admin/active-users', (req, res) => {
 // END VISITOR TRACKING SYSTEM
 // ==========================================
 
-// Clean corrupted flag data on startup (non-blocking)
-setTimeout(() => {
-    db.all("SELECT id, home_team_flag, away_team_flag FROM matches", [], (err, rows) => {
-        if (err) console.error('Error checking flags:', err.message);
-        else if (rows && rows.length > 0) {
-            rows.forEach(row => {
-                const cleanHome = extractCleanUrl(row.home_team_flag);
-                const cleanAway = extractCleanUrl(row.away_team_flag);
-                if ((cleanHome && cleanHome !== row.home_team_flag) || (cleanAway && cleanAway !== row.away_team_flag)) {
-                    db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
-                        [cleanHome || row.home_team_flag, cleanAway || row.away_team_flag, row.id], (err) => {
-                            if (err) console.error('Error cleaning flag:', err.message);
-                        });
-                }
-            });
-        }
-    });
-}, 1000);
+// Clean corrupted flag data on startup (non-blocking) - DISABLED FOR DEBUG
+// setTimeout(() => {
+//     db.all("SELECT id, home_team_flag, away_team_flag FROM matches", [], (err, rows) => {
+//         if (err) console.error('Error checking flags:', err.message);
+//         else if (rows && rows.length > 0) {
+//             rows.forEach(row => {
+//                 const cleanHome = extractCleanUrl(row.home_team_flag);
+//                 const cleanAway = extractCleanUrl(row.away_team_flag);
+//                 if ((cleanHome && cleanHome !== row.home_team_flag) || (cleanAway && cleanAway !== row.away_team_flag)) {
+//                     db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
+//                         [cleanHome || row.home_team_flag, cleanAway || row.away_team_flag, row.id], (err) => {
+//                             if (err) console.error('Error cleaning flag:', err.message);
+//                         });
+//                 }
+//             });
+//         }
+//     });
+// }, 1000);
 
 app.use(express.static('public'));
 
-// Flag sanitization for match endpoints only
-app.use('/api/matches', (req, res, next) => {
-    const originalJson = res.json.bind(res);
-    res.json = function(data) {
-        if (data && typeof data === 'object' && !Array.isArray(data) && (data.home_team_flag !== undefined || data.away_team_flag !== undefined)) {
-            data = { ...data };
-            data.home_team_flag = extractCleanUrl(data.home_team_flag);
-            data.away_team_flag = extractCleanUrl(data.away_team_flag);
-        }
-        return originalJson(data);
-    };
-    next();
-});
+// Flag sanitization for match endpoints only - TEMPORARILY DISABLED FOR DEBUG
+// app.use('/api/matches', (req, res, next) => {
+//     const originalJson = res.json.bind(res);
+//     res.json = function(data) {
+//         if (data && typeof data === 'object' && !Array.isArray(data) && (data.home_team_flag !== undefined || data.away_team_flag !== undefined)) {
+//             data = { ...data };
+//             data.home_team_flag = extractCleanUrl(data.home_team_flag);
+//             data.away_team_flag = extractCleanUrl(data.away_team_flag);
+//         }
+//         return originalJson(data);
+//     };
+//     next();
+// });
 
 // Sitemap
 app.get('/sitemap.xml', (req, res) => {
