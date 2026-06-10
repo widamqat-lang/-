@@ -70,6 +70,27 @@ header {
     color: var(--primary);
 }
 
+/* Language Selector */
+.language-selector {
+    position: relative;
+}
+
+.language-selector button {
+    font-weight: 500;
+}
+
+.lang-dropdown button:hover {
+    background: var(--bg-card-hover) !important;
+}
+
+[dir="rtl"] .nav-links {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .language-selector button {
+    flex-direction: row-reverse;
+}
+
 /* Hero Section */
 .hero {
     background: linear-gradient(135deg, #0a0e1a 0%, #151b2e 50%, #1a2238 100%);

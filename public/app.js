@@ -1,7 +1,7 @@
-// App State
+// App State - Initialize language from browser or saved preference
 const state = {
     currentView: 'home',
-    language: 'en',
+    language: typeof initLanguage === 'function' ? initLanguage() : (localStorage.getItem('selectedLanguage') || 'en'),
     selectedSeats: [],
     currentMatch: null,
     adminToken: localStorage.getItem('admin_token') || null,
@@ -19,200 +19,32 @@ function generateSessionId() {
 // API Base URL
 const API_URL = '/api';
 
-// Translations
-const translations = {
-    en: {
-        title: 'FIFA World Cup 2026',
-        subtitle: 'Ticket Sales Platform',
-        home: 'Home',
-        matches: 'Matches',
-        admin: 'Admin',
-        login: 'Login',
-        logout: 'Logout',
-        viewMatches: 'View Matches',
-        featuredMatches: 'Featured Matches',
-        selectSeats: 'Select Seats',
-        checkout: 'Checkout',
-        customerInfo: 'Customer Information',
-        name: 'Full Name',
-        whatsapp: 'WhatsApp Number',
-        email: 'Email Address',
-        country: 'Country',
-        notes: 'Additional Notes',
-        submitOrder: 'Proceed to Payment',
-        orderSuccess: 'Order submitted successfully!',
-        loading: 'Loading...',
-        error: 'An error occurred',
-        stadium: 'Stadium',
-        city: 'City',
-        price: 'Price',
-        available: 'Available',
-        reserved: 'Reserved',
-        sold: 'Sold',
-        selected: 'Selected',
-        adminPanel: 'Admin Panel',
-        dashboard: 'Dashboard',
-        manageMatches: 'Manage Matches',
-        manageOrders: 'Manage Orders',
-        manageVisitors: 'Manage Visitors',
-        manageSettings: 'Manage Settings',
-        stats: 'Statistics',
-        totalMatches: 'Total Matches',
-        totalOrders: 'Total Orders',
-        totalRevenue: 'Total Revenue',
-        recentOrders: 'Recent Orders',
-        addMatch: 'Add Match',
-        edit: 'Edit',
-        delete: 'Delete',
-        duplicate: 'Duplicate',
-        save: 'Save',
-        cancel: 'Cancel',
-        homeTeam: 'Home Team',
-        awayTeam: 'Away Team',
-        matchDate: 'Match Date',
-        stage: 'Stage',
-        minPrice: 'Minimum Price',
-        isActive: 'Active',
-        availablePercentage: 'Available Percentage',
-        category: 'Category',
-        seatNumber: 'Seat Number',
-        section: 'Section',
-        row: 'Row',
-        ticketPrice: 'Ticket Price',
-        paymentStatus: 'Payment Status',
-        pending: 'Pending',
-        confirmed: 'Confirmed',
-        cancelled: 'Cancelled',
-        paymentLink: 'Payment Link',
-        visitors: 'Visitors',
-        completedOrder: 'Completed Order',
-        payNow: 'Pay Now',
-        paymentSummary: 'Payment Summary',
-        selectedSeatsCount: 'Selected Seats',
-        totalAmount: 'Total Amount',
-        // Seat picker
-        seat: 'Seat',
-        yourSelection: 'Your Selection',
-        continue: 'Continue',
-        clearSelection: 'Clear Selection',
-        noSeatsSelected: 'No seats selected',
-        seatDetails: 'Seat Details',
-        // Admin
-        moveUp: 'Move Up',
-        moveDown: 'Move Down',
-        addNewMatch: 'Add New Match',
-        editMatch: 'Edit Match',
-        deleteMatch: 'Delete Match',
-        confirmDelete: 'Are you sure you want to delete this match?',
-        matchOrder: 'Match Order',
-        stadiumSelection: 'Stadium Selection',
-        selectStadium: 'Select Stadium',
-        seats: 'Seats',
-        backToMatches: 'Back to Matches'
-    },
-    ar: {
-        title: 'كأس العالم 2026',
-        subtitle: 'منصة بيع التذاكر',
-        home: 'الرئيسية',
-        matches: 'المباريات',
-        admin: 'الإدارة',
-        login: 'تسجيل الدخول',
-        logout: 'تسجيل الخروج',
-        viewMatches: 'عرض المباريات',
-        featuredMatches: 'المباريات المميزة',
-        selectSeats: 'اختر المقاعد',
-        checkout: 'إتمام الشراء',
-        customerInfo: 'معلومات العميل',
-        name: 'الاسم الكامل',
-        whatsapp: 'رقم الواتساب',
-        email: 'البريد الإلكتروني',
-        country: 'الدولة',
-        notes: 'ملاحظات إضافية',
-        submitOrder: 'المتابعة للدفع',
-        orderSuccess: 'تم إرسال الطلب بنجاح!',
-        loading: 'جاري التحميل...',
-        error: 'حدث خطأ',
-        stadium: 'الملعب',
-        city: 'المدينة',
-        price: 'السعر',
-        available: 'متاح',
-        reserved: 'محجوز',
-        sold: 'تم البيع',
-        selected: 'محدد',
-        adminPanel: 'لوحة الإدارة',
-        dashboard: 'لوحة التحكم',
-        manageMatches: 'إدارة المباريات',
-        manageOrders: 'إدارة الطلبات',
-        manageVisitors: 'إدارة الزوار',
-        manageSettings: 'إدارة الإعدادات',
-        stats: 'الإحصائيات',
-        totalMatches: 'إجمالي المباريات',
-        totalOrders: 'إجمالي الطلبات',
-        totalRevenue: 'إجمالي الإيرادات',
-        recentOrders: 'الطلبات الأخيرة',
-        addMatch: 'إضافة مباراة',
-        edit: 'تعديل',
-        delete: 'حذف',
-        duplicate: 'تكرار',
-        save: 'حفظ',
-        cancel: 'إلغاء',
-        homeTeam: 'الفريق المضيف',
-        awayTeam: 'الفريق الضيف',
-        matchDate: 'تاريخ المباراة',
-        stage: 'المرحلة',
-        minPrice: 'الحد الأدنى للسعر',
-        isActive: 'نشط',
-        availablePercentage: 'نسبة المقاعد المتاحة',
-        category: 'الفئة',
-        seatNumber: 'رقم المقعد',
-        section: 'القسم',
-        row: 'الصف',
-        ticketPrice: 'سعر التذكرة',
-        paymentStatus: 'حالة الدفع',
-        pending: 'قيد الانتظار',
-        confirmed: 'مؤكد',
-        cancelled: 'ملغي',
-        paymentLink: 'رابط الدفع',
-        visitors: 'الزوار',
-        completedOrder: 'أكمل الطلب',
-        payNow: 'ادفع الآن',
-        paymentSummary: 'ملخص الدفع',
-        selectedSeatsCount: 'المقاعد المحددة',
-        totalAmount: 'المبلغ الإجمالي',
-        // Seat picker
-        seat: 'المقعد',
-        yourSelection: 'اختيارك',
-        continue: 'متابعة',
-        clearSelection: 'مسح الاختيار',
-        noSeatsSelected: 'لم يتم اختيار مقاعد',
-        seatDetails: 'تفاصيل المقعد',
-        // Admin
-        moveUp: 'رفع للأعلى',
-        moveDown: 'تنزيل للأسفل',
-        addNewMatch: 'إضافة مباراة جديدة',
-        editMatch: 'تعديل المباراة',
-        deleteMatch: 'حذف المباراة',
-        confirmDelete: 'هل أنت متأكد من حذف هذه المباراة؟',
-        matchOrder: 'ترتيب المباراة',
-        stadiumSelection: 'اختيار الملعب',
-        selectStadium: 'اختر الملعب',
-        seats: 'المقاعد',
-        backToMatches: 'العودة للمباريات'
-    }
-};
+// Translations are now loaded from js/languages.js
 
 // Helper Functions
 function t(key) {
-    return translations[state.language][key] || key;
+    if (typeof window.t === 'function') {
+        return window.t(key);
+    }
+    return translations?.[state.language]?.[key] || translations?.en?.[key] || key;
 }
 
 function setLanguage(lang) {
+    if (typeof window.setLanguage === 'function') {
+        window.setLanguage(lang);
+        return;
+    }
+    
+    // Fallback if languages.js is not loaded
     state.language = lang;
+    localStorage.setItem('selectedLanguage', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
-    localStorage.setItem('language', lang);
-    render();
 }
+
+// Initialize direction based on language
+document.documentElement.dir = state.language === 'ar' ? 'rtl' : 'ltr';
+document.documentElement.lang = state.language;
 
 // Refresh current view
 function render() {
@@ -298,6 +130,10 @@ async function getPaymentLink() {
 
 // Render Functions
 function renderHeader() {
+    const langLabels = { es: 'ES', en: 'EN', ar: 'عربي' };
+    const currentLang = state.language || 'en';
+    const otherLangs = Object.keys(langLabels).filter(l => l !== currentLang);
+    
     return `
         <header>
             <div class="container header-content">
@@ -305,14 +141,41 @@ function renderHeader() {
                 <nav class="nav-links">
                     <a href="#" onclick="navigate('home'); return false;">${t('home')}</a>
                     <a href="#" onclick="navigate('matches'); return false;">${t('matches')}</a>
-                    <button onclick="setLanguage('${state.language === 'en' ? 'ar' : 'en'}')" style="background: var(--primary); color: var(--bg-dark); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                        ${state.language === 'en' ? 'العربية' : 'English'}
-                    </button>
+                    <div class="language-selector">
+                        <button id="lang-btn" onclick="toggleLanguageDropdown()" style="background: var(--primary); color: var(--bg-dark); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <span>🌐</span>
+                            <span>${langLabels[currentLang]}</span>
+                            <span style="font-size: 0.7em;">▼</span>
+                        </button>
+                        <div id="lang-dropdown" class="lang-dropdown" style="display: none; position: absolute; background: var(--bg-card); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); overflow: hidden; z-index: 1000; min-width: 120px;">
+                            ${otherLangs.map(lang => `
+                                <button onclick="setLanguage('${lang}')" style="width: 100%; padding: 12px 16px; border: none; background: none; cursor: pointer; text-align: ${lang === 'ar' ? 'right' : 'left'}; font-size: 0.9rem;">
+                                    ${langLabels[lang]} - ${lang === 'es' ? 'Español' : lang === 'ar' ? 'العربية' : 'English'}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
                 </nav>
             </div>
         </header>
     `;
 }
+
+// Toggle language dropdown
+function toggleLanguageDropdown() {
+    const dropdown = document.getElementById('lang-dropdown');
+    if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.language-selector')) {
+        const dropdown = document.getElementById('lang-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+    }
+});
 
 async function renderHome() {
     const app = document.getElementById('app');
