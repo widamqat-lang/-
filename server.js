@@ -79,31 +79,38 @@ app.get('/api/admin/visitor-stream', (req, res) => {
 
 // Visitor tracking endpoint (called by client pages)
 app.post('/api/track-activity', (req, res) => {
-    const { sessionId, page, selectedPrice, selectedTier, country, insuranceCompany, cardProgress } = req.body;
-    
-    if (!sessionId) {
-        return res.status(400).json({ error: 'sessionId required' });
+    try {
+        const { sessionId, page, selectedPrice, selectedTier, country, insuranceCompany, cardProgress } = req.body;
+        
+        if (!sessionId) {
+            res.status(400).json({ error: 'sessionId required' });
+            return;
+        }
+        
+        const userAgent = req.headers['user-agent'] || 'Unknown';
+        const ip = req.ip || req.connection.remoteAddress || 'Unknown';
+        
+        activeUsers[sessionId] = {
+            page: page || 'unknown',
+            selectedPrice: selectedPrice || null,
+            selectedTier: selectedTier || null,
+            country: country || null,
+            insuranceCompany: insuranceCompany || null,
+            cardProgress: cardProgress || null,
+            lastSeen: Date.now(),
+            userAgent: userAgent,
+            ip: ip
+        };
+        
+        // Broadcast immediately to all SSE clients
+        broadcastUpdate();
+        
+        // Use res.send to avoid middleware issues
+        res.type('json').send(JSON.stringify({ success: true, activeCount: Object.keys(activeUsers).length }));
+    } catch (error) {
+        console.error('Track activity error:', error);
+        res.status(500).json({ error: 'Internal error' });
     }
-    
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-    const ip = req.ip || req.connection.remoteAddress || 'Unknown';
-    
-    activeUsers[sessionId] = {
-        page: page || 'unknown',
-        selectedPrice: selectedPrice || null,
-        selectedTier: selectedTier || null,
-        country: country || null,
-        insuranceCompany: insuranceCompany || null,
-        cardProgress: cardProgress || null,
-        lastSeen: Date.now(),
-        userAgent: userAgent,
-        ip: ip
-    };
-    
-    // Broadcast immediately to all SSE clients
-    broadcastUpdate();
-    
-    res.json({ success: true, activeCount: Object.keys(activeUsers).length });
 });
 
 // Analytics summary endpoint
@@ -210,25 +217,19 @@ function extractCleanUrl(flagUrl) {
     return '';
 }
 
-// Middleware to sanitize flag URLs in API responses
-const sanitizeFlags = (req, res, next) => {
+// Flag sanitization for match endpoints only
+app.use('/api/matches', (req, res, next) => {
     const originalJson = res.json.bind(res);
     res.json = function(data) {
-        if (data && typeof data === 'object' && !Array.isArray(data)) {
-            // Only modify single objects (not arrays)
-            if (data.home_team_flag !== undefined || data.away_team_flag !== undefined) {
-                data = { ...data };
-                data.home_team_flag = extractCleanUrl(data.home_team_flag);
-                data.away_team_flag = extractCleanUrl(data.away_team_flag);
-            }
+        if (data && typeof data === 'object' && !Array.isArray(data) && (data.home_team_flag !== undefined || data.away_team_flag !== undefined)) {
+            data = { ...data };
+            data.home_team_flag = extractCleanUrl(data.home_team_flag);
+            data.away_team_flag = extractCleanUrl(data.away_team_flag);
         }
         return originalJson(data);
     };
     next();
-};
-
-// Use sanitization middleware for API routes
-app.use('/api', sanitizeFlags);
+});
 
 app.use(express.static('public'));
 app.use(express.json());
