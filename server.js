@@ -86,6 +86,28 @@ app.get('/api/stats/featured-matches', (req, res) => {
     });
 });
 
+// Stats summary for dashboard
+app.get('/api/stats/summary', (req, res) => {
+    const stats = { totalMatches: 0, totalOrders: 0, totalRevenue: 0, availableTickets: 0 };
+    
+    db.get('SELECT COUNT(*) as count FROM matches', [], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        stats.totalMatches = row.count;
+        
+        db.get('SELECT COUNT(*) as count, COALESCE(SUM(total_price), 0) as revenue FROM orders', [], (err, row) => {
+            if (err) return res.status(500).json({ error: err.message });
+            stats.totalOrders = row.count;
+            stats.totalRevenue = row.revenue;
+            
+            db.get('SELECT COUNT(*) as count FROM tickets WHERE status = "available"', [], (err, row) => {
+                if (err) return res.status(500).json({ error: err.message });
+                stats.availableTickets = row.count;
+                res.json(stats);
+            });
+        });
+    });
+});
+
 // Orders - POST
 app.post('/api/orders', (req, res) => {
     console.log('Orders request:', req.body);
@@ -144,6 +166,18 @@ app.post('/api/visitors', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
         });
+});
+
+app.get('/api/visitors', (req, res) => {
+    db.all(`
+        SELECT v.*, m.home_team || ' vs ' || m.away_team as match_name 
+        FROM visitors v 
+        LEFT JOIN matches m ON v.match_id = m.id 
+        ORDER BY v.visited_at DESC
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
 });
 
 // Settings

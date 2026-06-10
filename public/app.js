@@ -979,14 +979,14 @@ async function renderAdminAddMatch() {
     app.innerHTML = `
         ${renderHeader()}
         <main>
-            <section class="matches-section">
+            <section class="matches-section" style="background: var(--bg-primary); min-height: 100vh;">
                 <div class="container">
                     <button onclick="navigate('admin-matches')" style="background: none; border: none; color: var(--primary); cursor: pointer; margin-bottom: 20px;">← ${t('manageMatches')}</button>
                     <h2 class="section-title">${t('addMatch')}</h2>
                     <div id="stadium-selector-loading" style="text-align: center; padding: 20px;">
                         <div class="loading-spinner"></div>
                     </div>
-                    <form id="add-match-form" style="max-width: 800px; display: none;">
+                    <form id="add-match-form" class="form-container" style="display: none;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="form-group">
                                 <label>${t('homeTeam')} (EN)</label>
@@ -1158,11 +1158,11 @@ async function editMatch(matchId) {
     app.innerHTML = `
         ${renderHeader()}
         <main>
-            <section class="matches-section">
+            <section class="matches-section" style="background: var(--bg-primary); min-height: 100vh;">
                 <div class="container">
                     <button onclick="navigate('admin-matches')" style="background: none; border: none; color: var(--primary); cursor: pointer; margin-bottom: 20px;">← ${t('manageMatches')}</button>
                     <h2 class="section-title">${t('editMatch')}</h2>
-                    <div id="edit-match-form">
+                    <div id="edit-match-form" class="form-container">
                         <div class="loading">
                             <div class="loading-spinner"></div>
                             <p>${t('loading')}</p>
