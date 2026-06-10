@@ -990,7 +990,7 @@ async function renderAdminAddMatch() {
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                             <div class="form-group">
                                 <label>${t('homeTeam')} (EN)</label>
-                                <input type="text" name="homeTeam" required>
+                                <input type="text" name="homeTeam" id="add_home_team_input" required oninput="autoUpdateFlagFromAdd(this, 'add_home_team_flag_preview', 'add_home_team_flag_value'); updateAddFlagStatus('home')">
                             </div>
                             <div class="form-group">
                                 <label>${t('homeTeam')} (AR)</label>
@@ -998,19 +998,27 @@ async function renderAdminAddMatch() {
                             </div>
                             <div class="form-group">
                                 <label>${t('awayTeam')} (EN)</label>
-                                <input type="text" name="awayTeam" required>
+                                <input type="text" name="awayTeam" id="add_away_team_input" required oninput="autoUpdateFlagFromAdd(this, 'add_away_team_flag_preview', 'add_away_team_flag_value'); updateAddFlagStatus('away')">
                             </div>
                             <div class="form-group">
                                 <label>${t('awayTeam')} (AR)</label>
                                 <input type="text" name="awayTeamAr" required>
                             </div>
                             <div class="form-group">
-                                <label>Home Team Flag (Emoji)</label>
-                                <input type="text" name="homeTeamFlag" placeholder="🇧🇷">
+                                <label>${t('homeTeam')} Flag (Auto-detected)</label>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <img id="add_home_team_flag_preview" src="" style="width: 50px; height: 35px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                                    <input type="hidden" name="homeTeamFlag" id="add_home_team_flag_value" value="">
+                                    <span id="add_home_flag_status" style="color: var(--text-secondary); font-size: 0.9rem;">Enter team name to auto-detect flag</span>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label>Away Team Flag (Emoji)</label>
-                                <input type="text" name="awayTeamFlag" placeholder="🇦🇷">
+                                <label>${t('awayTeam')} Flag (Auto-detected)</label>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <img id="add_away_team_flag_preview" src="" style="width: 50px; height: 35px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; display: none;">
+                                    <input type="hidden" name="awayTeamFlag" id="add_away_team_flag_value" value="">
+                                    <span id="add_away_flag_status" style="color: var(--text-secondary); font-size: 0.9rem;">Enter team name to auto-detect flag</span>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>${t('stadiumSelection')} *</label>
@@ -1186,35 +1194,37 @@ async function editMatch(matchId) {
                 <h3 style="margin-top: 20px; color: var(--primary);">الفريق الأول</h3>
                 <div class="form-group">
                     <label>الفريق (إنجليزي)</label>
-                    <input type="text" name="home_team" value="${match.home_team || ''}" required>
+                    <input type="text" name="home_team" id="home_team_input" value="${match.home_team || ''}" required oninput="autoUpdateFlag(this, 'home_team_flag_preview', 'home_team_flag_value'); updateFlagStatus('home')">
                 </div>
                 <div class="form-group">
                     <label>الفريق (عربي)</label>
                     <input type="text" name="home_team_ar" value="${match.home_team_ar || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>علم الفريق</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <img id="home_team_flag_preview" src="${match.home_team_flag || ''}" style="width: 40px; height: 30px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; ${!match.home_team_flag ? 'display:none' : ''}">
-                        <select name="home_team_flag" onchange="updateFlagPreview(this, 'home_team_flag_preview')" style="flex: 1;">
-                            <option value="">اختر العلم...</option>
-                        </select>
+                    <label>علم الفريق (يتم تحديده تلقائياً)</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img id="home_team_flag_preview" src="${match.home_team_flag || ''}" style="width: 50px; height: 35px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; ${!match.home_team_flag ? 'display:none' : ''}">
+                        <input type="hidden" id="home_team_flag_value" name="home_team_flag" value="${match.home_team_flag || ''}">
+                        <span id="home_flag_status" style="color: var(--text-secondary); font-size: 0.9rem;">${match.home_team_flag ? '✓ تم تحديد العلم تلقائياً' : 'أدخل اسم الفريق لتحديد العلم'}</span>
                     </div>
-                    <input type="hidden" id="home_team_flag_value" value="${match.home_team_flag || ''}">
                 </div>
                 
                 <h3 style="margin-top: 20px; color: var(--primary);">الفريق الثاني</h3>
                 <div class="form-group">
                     <label>الفريق (إنجليزي)</label>
-                    <input type="text" name="away_team" value="${match.away_team || ''}" required>
+                    <input type="text" name="away_team" id="away_team_input" value="${match.away_team || ''}" required oninput="autoUpdateFlag(this, 'away_team_flag_preview', 'away_team_flag_value'); updateFlagStatus('away')">
                 </div>
                 <div class="form-group">
                     <label>الفريق (عربي)</label>
                     <input type="text" name="away_team_ar" value="${match.away_team_ar || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label>رابط علم الفريق</label>
-                    <input type="text" name="away_team_flag" value="${match.away_team_flag || ''}" placeholder="https://flagcdn.com/w80/xx.png">
+                    <label>علم الفريق (يتم تحديده تلقائياً)</label>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <img id="away_team_flag_preview" src="${match.away_team_flag || ''}" style="width: 50px; height: 35px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; ${!match.away_team_flag ? 'display:none' : ''}">
+                        <input type="hidden" id="away_team_flag_value" name="away_team_flag" value="${match.away_team_flag || ''}">
+                        <span id="away_flag_status" style="color: var(--text-secondary); font-size: 0.9rem;">${match.away_team_flag ? '✓ تم تحديد العلم تلقائياً' : 'أدخل اسم الفريق لتحديد العلم'}</span>
+                    </div>
                 </div>
                 
                 <h3 style="margin-top: 20px; color: var(--primary);">تفاصيل المباراة</h3>
@@ -1286,8 +1296,8 @@ async function editMatch(matchId) {
         document.getElementById('edit-match-form').innerHTML = `<div class="error">${t('error')}: ${error.message}</div>`;
     }
     
-    // Initialize flag selects
-    setTimeout(initFlagSelects, 100);
+    // Initialize flag auto-update
+    setTimeout(initFlagAutoUpdate, 100);
 }
 
 async function updateMatch(event, matchId) {
@@ -2088,155 +2098,201 @@ function navigate(view, param = null) {
 
 
 // Country code mapping
-const countryCodes = {
-    'mexico': 'mx', 'mx': 'mx',
-    'south africa': 'za', 'za': 'za',
-    'south korea': 'kr', 'korea': 'kr', 'kr': 'kr',
-    'czech': 'cz', 'czechia': 'cz', 'cz': 'cz',
-    'canada': 'ca', 'ca': 'ca',
-    'bosnia': 'ba', 'bosnia herzegovina': 'ba', 'ba': 'ba',
-    'usa': 'us', 'united states': 'us', 'us': 'us',
-    'paraguay': 'py', 'py': 'py',
-    'brazil': 'br', 'br': 'br',
-    'argentina': 'ar', 'ar': 'ar',
-    'germany': 'de', 'de': 'de',
-    'france': 'fr', 'fr': 'fr',
-    'spain': 'es', 'es': 'es',
-    'england': 'gb', 'gb': 'gb', 'uk': 'gb',
-    'italy': 'it', 'it': 'it',
-    'portugal': 'pt', 'pt': 'pt',
-    'netherlands': 'nl', 'nl': 'nl',
-    'belgium': 'be', 'be': 'be',
-    'japan': 'jp', 'jp': 'jp',
-    'australia': 'au', 'au': 'au',
-    'morocco': 'ma', 'ma': 'ma',
-    'senegal': 'sn', 'sn': 'sn',
-    'egypt': 'eg', 'eg': 'eg',
-    'nigeria': 'ng', 'ng': 'ng',
-    'cameroon': 'cm', 'cm': 'cm',
-    'ghana': 'gh', 'gh': 'gh',
-    'algeria': 'dz', 'dz': 'dz',
-    'tunisia': 'tn', 'tn': 'tn',
-    'qatar': 'qa', 'qa': 'qa',
-    'saudi': 'sa', 'saudi arabia': 'sa',
-    'uae': 'ae', 'united arab emirates': 'ae', 'ae': 'ae',
-    'switzerland': 'ch', 'ch': 'ch',
-    'austria': 'at', 'at': 'at',
-    'denmark': 'dk', 'dk': 'dk',
-    'sweden': 'se', 'se': 'se',
-    'norway': 'no', 'no': 'no',
-    'poland': 'pl', 'pl': 'pl',
-    'ukraine': 'ua', 'ua': 'ua',
-    'russia': 'ru', 'ru': 'ru',
-    'croatia': 'hr', 'hr': 'hr',
-    'serbia': 'rs', 'rs': 'rs',
-    'colombia': 'co', 'co': 'co',
-    'peru': 'pe', 'pe': 'pe',
-    'chile': 'cl', 'cl': 'cl',
-    'ecuador': 'ec', 'ec': 'ec',
-    'uruguay': 'uy', 'uy': 'uy',
-    'venezuela': 've', 've': 've'
+// Country flag URL mapping (using flagcdn.com)
+const countryFlags = {
+    // North America
+    'mexico': 'https://flagcdn.com/w80/mx.png', 'mx': 'https://flagcdn.com/w80/mx.png',
+    'canada': 'https://flagcdn.com/w80/ca.png', 'ca': 'https://flagcdn.com/w80/ca.png',
+    'usa': 'https://flagcdn.com/w80/us.png', 'united states': 'https://flagcdn.com/w80/us.png', 'us': 'https://flagcdn.com/w80/us.png',
+    
+    // South America
+    'brazil': 'https://flagcdn.com/w80/br.png', 'br': 'https://flagcdn.com/w80/br.png',
+    'argentina': 'https://flagcdn.com/w80/ar.png', 'ar': 'https://flagcdn.com/w80/ar.png',
+    'paraguay': 'https://flagcdn.com/w80/py.png', 'py': 'https://flagcdn.com/w80/py.png',
+    'chile': 'https://flagcdn.com/w80/cl.png', 'cl': 'https://flagcdn.com/w80/cl.png',
+    'colombia': 'https://flagcdn.com/w80/co.png', 'co': 'https://flagcdn.com/w80/co.png',
+    'peru': 'https://flagcdn.com/w80/pe.png', 'pe': 'https://flagcdn.com/w80/pe.png',
+    'ecuador': 'https://flagcdn.com/w80/ec.png', 'ec': 'https://flagcdn.com/w80/ec.png',
+    'venezuela': 'https://flagcdn.com/w80/ve.png', 've': 'https://flagcdn.com/w80/ve.png',
+    'uruguay': 'https://flagcdn.com/w80/uy.png', 'uy': 'https://flagcdn.com/w80/uy.png',
+    
+    // Europe
+    'germany': 'https://flagcdn.com/w80/de.png', 'de': 'https://flagcdn.com/w80/de.png',
+    'france': 'https://flagcdn.com/w80/fr.png', 'fr': 'https://flagcdn.com/w80/fr.png',
+    'spain': 'https://flagcdn.com/w80/es.png', 'es': 'https://flagcdn.com/w80/es.png',
+    'england': 'https://flagcdn.com/w80/gb.png', 'uk': 'https://flagcdn.com/w80/gb.png', 'gb': 'https://flagcdn.com/w80/gb.png',
+    'italy': 'https://flagcdn.com/w80/it.png', 'it': 'https://flagcdn.com/w80/it.png',
+    'portugal': 'https://flagcdn.com/w80/pt.png', 'pt': 'https://flagcdn.com/w80/pt.png',
+    'netherlands': 'https://flagcdn.com/w80/nl.png', 'nl': 'https://flagcdn.com/w80/nl.png',
+    'belgium': 'https://flagcdn.com/w80/be.png', 'be': 'https://flagcdn.com/w80/be.png',
+    'switzerland': 'https://flagcdn.com/w80/ch.png', 'ch': 'https://flagcdn.com/w80/ch.png',
+    'austria': 'https://flagcdn.com/w80/at.png', 'at': 'https://flagcdn.com/w80/at.png',
+    'denmark': 'https://flagcdn.com/w80/dk.png', 'dk': 'https://flagcdn.com/w80/dk.png',
+    'sweden': 'https://flagcdn.com/w80/se.png', 'se': 'https://flagcdn.com/w80/se.png',
+    'norway': 'https://flagcdn.com/w80/no.png', 'no': 'https://flagcdn.com/w80/no.png',
+    'poland': 'https://flagcdn.com/w80/pl.png', 'pl': 'https://flagcdn.com/w80/pl.png',
+    'ukraine': 'https://flagcdn.com/w80/ua.png', 'ua': 'https://flagcdn.com/w80/ua.png',
+    'russia': 'https://flagcdn.com/w80/ru.png', 'ru': 'https://flagcdn.com/w80/ru.png',
+    'croatia': 'https://flagcdn.com/w80/hr.png', 'hr': 'https://flagcdn.com/w80/hr.png',
+    'serbia': 'https://flagcdn.com/w80/rs.png', 'rs': 'https://flagcdn.com/w80/rs.png',
+    'czech': 'https://flagcdn.com/w80/cz.png', 'czechia': 'https://flagcdn.com/w80/cz.png', 'cz': 'https://flagcdn.com/w80/cz.png',
+    'scotland': 'https://flagcdn.com/w80/gb.png',
+    'wales': 'https://flagcdn.com/w80/gb.png',
+    'ireland': 'https://flagcdn.com/w80/ie.png', 'ie': 'https://flagcdn.com/w80/ie.png',
+    'finland': 'https://flagcdn.com/w80/fi.png', 'fi': 'https://flagcdn.com/w80/fi.png',
+    'iceland': 'https://flagcdn.com/w80/is.png', 'is': 'https://flagcdn.com/w80/is.png',
+    'hungary': 'https://flagcdn.com/w80/hu.png', 'hu': 'https://flagcdn.com/w80/hu.png',
+    'romania': 'https://flagcdn.com/w80/ro.png', 'ro': 'https://flagcdn.com/w80/ro.png',
+    'slovakia': 'https://flagcdn.com/w80/sk.png', 'sk': 'https://flagcdn.com/w80/sk.png',
+    'slovenia': 'https://flagcdn.com/w80/si.png', 'si': 'https://flagcdn.com/w80/si.png',
+    
+    // Asia
+    'japan': 'https://flagcdn.com/w80/jp.png', 'jp': 'https://flagcdn.com/w80/jp.png',
+    'south korea': 'https://flagcdn.com/w80/kr.png', 'korea': 'https://flagcdn.com/w80/kr.png', 'kr': 'https://flagcdn.com/w80/kr.png',
+    'china': 'https://flagcdn.com/w80/cn.png', 'cn': 'https://flagcdn.com/w80/cn.png',
+    'qatar': 'https://flagcdn.com/w80/qa.png', 'qa': 'https://flagcdn.com/w80/qa.png',
+    'uae': 'https://flagcdn.com/w80/ae.png', 'united arab emirates': 'https://flagcdn.com/w80/ae.png', 'ae': 'https://flagcdn.com/w80/ae.png',
+    'saudi': 'https://flagcdn.com/w80/sa.png', 'saudi arabia': 'https://flagcdn.com/w80/sa.png', 'sa': 'https://flagcdn.com/w80/sa.png',
+    'iran': 'https://flagcdn.com/w80/ir.png', 'ir': 'https://flagcdn.com/w80/ir.png',
+    'iraq': 'https://flagcdn.com/w80/iq.png', 'iq': 'https://flagcdn.com/w80/iq.png',
+    'india': 'https://flagcdn.com/w80/in.png', 'in': 'https://flagcdn.com/w80/in.png',
+    'indonesia': 'https://flagcdn.com/w80/id.png', 'id': 'https://flagcdn.com/w80/id.png',
+    'thailand': 'https://flagcdn.com/w80/th.png', 'th': 'https://flagcdn.com/w80/th.png',
+    'vietnam': 'https://flagcdn.com/w80/vn.png', 'vn': 'https://flagcdn.com/w80/vn.png',
+    'malaysia': 'https://flagcdn.com/w80/my.png', 'my': 'https://flagcdn.com/w80/my.png',
+    'philippines': 'https://flagcdn.com/w80/ph.png', 'ph': 'https://flagcdn.com/w80/ph.png',
+    'pakistan': 'https://flagcdn.com/w80/pk.png', 'pk': 'https://flagcdn.com/w80/pk.png',
+    'bangladesh': 'https://flagcdn.com/w80/bd.png', 'bd': 'https://flagcdn.com/w80/bd.png',
+    
+    // Africa
+    'south africa': 'https://flagcdn.com/w80/za.png', 'za': 'https://flagcdn.com/w80/za.png',
+    'morocco': 'https://flagcdn.com/w80/ma.png', 'ma': 'https://flagcdn.com/w80/ma.png',
+    'egypt': 'https://flagcdn.com/w80/eg.png', 'eg': 'https://flagcdn.com/w80/eg.png',
+    'nigeria': 'https://flagcdn.com/w80/ng.png', 'ng': 'https://flagcdn.com/w80/ng.png',
+    'senegal': 'https://flagcdn.com/w80/sn.png', 'sn': 'https://flagcdn.com/w80/sn.png',
+    'cameroon': 'https://flagcdn.com/w80/cm.png', 'cm': 'https://flagcdn.com/w80/cm.png',
+    'ghana': 'https://flagcdn.com/w80/gh.png', 'gh': 'https://flagcdn.com/w80/gh.png',
+    'algeria': 'https://flagcdn.com/w80/dz.png', 'dz': 'https://flagcdn.com/w80/dz.png',
+    'tunisia': 'https://flagcdn.com/w80/tn.png', 'tn': 'https://flagcdn.com/w80/tn.png',
+    'ivory coast': 'https://flagcdn.com/w80/ci.png', 'cote d\'ivoire': 'https://flagcdn.com/w80/ci.png', 'ci': 'https://flagcdn.com/w80/ci.png',
+    'kenya': 'https://flagcdn.com/w80/ke.png', 'ke': 'https://flagcdn.com/w80/ke.png',
+    'ethiopia': 'https://flagcdn.com/w80/et.png', 'et': 'https://flagcdn.com/w80/et.png',
+    'cameroon': 'https://flagcdn.com/w80/cm.png', 'cm': 'https://flagcdn.com/w80/cm.png',
+    'zambia': 'https://flagcdn.com/w80/zm.png', 'zm': 'https://flagcdn.com/w80/zm.png',
+    'south sudan': 'https://flagcdn.com/w80/ss.png', 'ss': 'https://flagcdn.com/w80/ss.png',
+    'congo': 'https://flagcdn.com/w80/cd.png', 'dr congo': 'https://flagcdn.com/w80/cd.png', 'cd': 'https://flagcdn.com/w80/cd.png',
+    'tanzania': 'https://flagcdn.com/w80/tz.png', 'tz': 'https://flagcdn.com/w80/tz.png',
+    'uganda': 'https://flagcdn.com/w80/ug.png', 'ug': 'https://flagcdn.com/w80/ug.png',
+    'angola': 'https://flagcdn.com/w80/ao.png', 'ao': 'https://flagcdn.com/w80/ao.png',
+    'mozambique': 'https://flagcdn.com/w80/mz.png', 'mz': 'https://flagcdn.com/w80/mz.png',
+    'madagascar': 'https://flagcdn.com/w80/mg.png', 'mg': 'https://flagcdn.com/w80/mg.png',
+    'namibia': 'https://flagcdn.com/w80/na.png', 'na': 'https://flagcdn.com/w80/na.png',
+    'botswana': 'https://flagcdn.com/w80/bw.png', 'bw': 'https://flagcdn.com/w80/bw.png',
+    'zimbabwe': 'https://flagcdn.com/w80/zw.png', 'zw': 'https://flagcdn.com/w80/zw.png',
+    'libya': 'https://flagcdn.com/w80/ly.png', 'ly': 'https://flagcdn.com/w80/ly.png',
+    
+    // Oceania
+    'australia': 'https://flagcdn.com/w80/au.png', 'au': 'https://flagcdn.com/w80/au.png',
+    'new zealand': 'https://flagcdn.com/w80/nz.png', 'nz': 'https://flagcdn.com/w80/nz.png',
+    
+    // Caribbean & Central America
+    'haiti': 'https://flagcdn.com/w80/ht.png', 'ht': 'https://flagcdn.com/w80/ht.png',
+    'jamaica': 'https://flagcdn.com/w80/jm.png', 'jm': 'https://flagcdn.com/w80/jm.png',
+    'costa rica': 'https://flagcdn.com/w80/cr.png', 'cr': 'https://flagcdn.com/w80/cr.png',
+    'honduras': 'https://flagcdn.com/w80/hn.png', 'hn': 'https://flagcdn.com/w80/hn.png',
+    'guatemala': 'https://flagcdn.com/w80/gt.png', 'gt': 'https://flagcdn.com/w80/gt.png',
+    'panama': 'https://flagcdn.com/w80/pa.png', 'pa': 'https://flagcdn.com/w80/pa.png',
+    
+    // Other
+    'turkey': 'https://flagcdn.com/w80/tr.png', 'tr': 'https://flagcdn.com/w80/tr.png',
+    'greece': 'https://flagcdn.com/w80/gr.png', 'gr': 'https://flagcdn.com/w80/gr.png',
+    'curacao': 'https://flagcdn.com/w80/cw.png', 'cw': 'https://flagcdn.com/w80/cw.png',
+    'cape verde': 'https://flagcdn.com/w80/cv.png', 'cv': 'https://flagcdn.com/w80/cv.png',
+    'iceland': 'https://flagcdn.com/w80/is.png', 'is': 'https://flagcdn.com/w80/is.png',
+    
+    // World Cup qualified teams
+    'bosnia': 'https://flagcdn.com/w80/ba.png', 'bosnia herzegovina': 'https://flagcdn.com/w80/ba.png', 'ba': 'https://flagcdn.com/w80/ba.png',
+    'palestine': 'https://flagcdn.com/w80/ps.png', 'ps': 'https://flagcdn.com/w80/ps.png',
+    'oman': 'https://flagcdn.com/w80/om.png', 'om': 'https://flagcdn.com/w80/om.png',
+    'jordan': 'https://flagcdn.com/w80/jo.png', 'jo': 'https://flagcdn.com/w80/jo.png',
+    'bahrain': 'https://flagcdn.com/w80/bh.png', 'bh': 'https://flagcdn.com/w80/bh.png',
+    'kuwait': 'https://flagcdn.com/w80/kw.png', 'kw': 'https://flagcdn.com/w80/kw.png',
+    'afghanistan': 'https://flagcdn.com/w80/af.png', 'af': 'https://flagcdn.com/w80/af.png',
+    'china': 'https://flagcdn.com/w80/cn.png',
 };
 
-function getCountryCode(teamName) {
+// Get flag URL from team name
+function getFlagUrl(teamName) {
     if (!teamName) return '';
-    const lower = teamName.toLowerCase();
-    return countryCodes[lower] || '';
+    const lower = teamName.toLowerCase().trim();
+    return countryFlags[lower] || '';
 }
 
-function updateFlagFromSelect(select, previewId) {
-    const preview = document.getElementById(previewId);
-    if (select.value) {
-        preview.src = select.value;
-        preview.style.display = 'block';
+// Auto-update flag when team name changes
+function autoUpdateFlag(teamInput, flagPreviewId, flagInputId) {
+    const flagUrl = getFlagUrl(teamInput.value);
+    const preview = document.getElementById(flagPreviewId);
+    const flagInput = document.getElementById(flagInputId);
+    
+    if (flagUrl) {
+        preview.src = flagUrl;
+        preview.style.display = 'inline-block';
+        if (flagInput) flagInput.value = flagUrl;
     } else {
+        preview.src = '';
         preview.style.display = 'none';
+        if (flagInput) flagInput.value = '';
     }
 }
 
-function autoDetectFlag(team) {
-    const teamInput = document.querySelector('input[name="' + team + '_team"]');
-    const select = document.getElementById(team + '_team_flag_select');
-    const preview = document.getElementById(team + '_flag_preview');
+// Initialize flag auto-update for edit/add forms
+function initFlagAutoUpdate() {
+    // Home team
+    const homeTeamInput = document.getElementById('home_team_input') || document.querySelector('input[name="home_team"]');
+    const homePreview = document.getElementById('home_team_flag_preview');
+    const homeInput = document.getElementById('home_team_flag_value');
     
-    if (!teamInput || !select) return;
+    if (homeTeamInput && homePreview) {
+        homeTeamInput.addEventListener('input', () => autoUpdateFlag(homeTeamInput, 'home_team_flag_preview', 'home_team_flag_value'));
+        // Also trigger on page load to set initial flag
+        autoUpdateFlag(homeTeamInput, 'home_team_flag_preview', 'home_team_flag_value');
+    }
     
-    const code = getCountryCode(teamInput.value);
-    if (code) {
-        const url = 'https://flagcdn.com/w80/' + code + '.png';
-        // Find in select
-        for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value.includes(code)) {
-                select.selectedIndex = i;
-                preview.src = url;
-                preview.style.display = 'block';
-                break;
-            }
-        }
+    // Away team
+    const awayTeamInput = document.getElementById('away_team_input') || document.querySelector('input[name="away_team"]');
+    const awayPreview = document.getElementById('away_team_flag_preview');
+    const awayInput = document.getElementById('away_team_flag_value');
+    
+    if (awayTeamInput && awayPreview) {
+        awayTeamInput.addEventListener('input', () => autoUpdateFlag(awayTeamInput, 'away_team_flag_preview', 'away_team_flag_value'));
+        // Also trigger on page load to set initial flag
+        autoUpdateFlag(awayTeamInput, 'away_team_flag_preview', 'away_team_flag_value');
     }
 }
 
-function autoSetFlag(teamInput, team) {
-    const code = getCountryCode(teamInput.value);
-    if (code) {
-        autoDetectFlag(team);
+// Update flag status text
+function updateFlagStatus(team) {
+    const statusEl = document.getElementById(team + '_flag_status');
+    const preview = document.getElementById(team + '_team_flag_preview');
+    if (statusEl && preview) {
+        statusEl.textContent = preview.src ? '✓ تم تحديد العلم تلقائياً' : 'أدخل اسم الفريق لتحديد العلم';
+        statusEl.style.color = preview.src ? 'var(--success)' : 'var(--text-secondary)';
     }
 }
 
-function initFlagSelects() {
-    const teams = ['home', 'away'];
-    teams.forEach(team => {
-        const select = document.getElementById(team + '_team_flag_select');
-        if (select) {
-            const allCodes = [...new Set(Object.values(countryCodes))].sort();
-            select.innerHTML = '<option value="">اختر...</option>';
-            allCodes.forEach(code => {
-                const opt = document.createElement('option');
-                opt.value = 'https://flagcdn.com/w80/' + code + '.png';
-                opt.textContent = code.toUpperCase();
-                select.appendChild(opt);
-            });
-            
-            // Set current value
-            const preview = document.getElementById(team + '_flag_preview');
-            if (preview && preview.src && preview.style.display !== 'none') {
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value === preview.src) {
-                        select.selectedIndex = i;
-                        break;
-                    }
-                }
-            }
-        }
-    });
+// Auto-update flag for add match form
+function autoUpdateFlagFromAdd(teamInput, flagPreviewId, flagInputId) {
+    autoUpdateFlag(teamInput, flagPreviewId, flagInputId);
 }
 
-function initFlagSelects() {
-    // Auto-populate flag selects based on team names
-    const homeSelect = document.querySelector('select[name="home_team_flag"]');
-    const awaySelect = document.querySelector('select[name="away_team_flag"]');
-    const homeTeam = document.querySelector('input[name="home_team"]')?.value || '';
-    const awayTeam = document.querySelector('input[name="away_team"]')?.value || '';
-    
-    // Build options
-    const allCodes = [...new Set(Object.values(countryCodes))].sort();
-    
-    [homeSelect, awaySelect].forEach((select, idx) => {
-        if (!select) return;
-        select.innerHTML = '<option value="">اختر العلم...</option>';
-        allCodes.forEach(code => {
-            const opt = document.createElement('option');
-            opt.value = 'https://flagcdn.com/w80/' + code + '.png';
-            opt.textContent = code.toUpperCase();
-            select.appendChild(opt);
-        });
-    });
-    
-    // Set current values
-    const homeVal = document.getElementById('home_team_flag_value')?.value || '';
-    const awayVal = document.getElementById('away_team_flag_value')?.value || '';
-    if (homeSelect && homeVal) homeSelect.value = homeVal;
-    if (awaySelect && awayVal) awayVal && (awaySelect.value = awayVal);
+// Update flag status for add match form
+function updateAddFlagStatus(team) {
+    const statusEl = document.getElementById('add_' + team + '_flag_status');
+    const preview = document.getElementById('add_' + team + '_team_flag_preview');
+    if (statusEl && preview) {
+        statusEl.textContent = preview.src ? '✓ Flag auto-detected' : 'Enter team name to auto-detect flag';
+        statusEl.style.color = preview.src ? 'var(--success)' : 'var(--text-secondary)';
+    }
 }
 
 // Initialize
