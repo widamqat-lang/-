@@ -1826,6 +1826,11 @@ async function renderSeatPicker(matchId) {
                 <p>🏟️ ${stadiumName} | ${formatDate(match.match_date)}</p>
             </div>
             
+            <!-- Instructional Banner -->
+            <div class="category-instruction" style="text-align: center; color: #ffca28; margin-top: 15px; margin-bottom: 10px; font-weight: bold; font-size: 14px; width: 100%;">
+                ${state.language === 'ar' ? 'يرجى اختيار الفئة المناسبة' : 'Please select the appropriate category'}
+            </div>
+            
             <!-- Section Tabs -->
             <div class="section-tabs-mobile">
                 ${Object.keys(groupedSeats).map(sectionId => `
@@ -1868,6 +1873,9 @@ async function renderSeatPicker(matchId) {
         window.currentSeatsData = groupedSeats;
         window.currentMatchId = matchId;
         window.currentSection = Object.keys(groupedSeats)[0];
+        
+        // Auto-select first category on load (UX improvement)
+        setTimeout(autoSelectFirstCategory, 100);
         
     } catch (error) {
         console.error('Seat picker error:', error);
@@ -1951,7 +1959,17 @@ function renderMobileSeatsList(groupedSeats) {
     return html;
 }
 
-// Show specific section on mobile
+// Auto-select first category on load (UX improvement)
+function autoSelectFirstCategory() {
+    const firstTabBtn = document.querySelector('.section-tab-btn');
+    if (firstTabBtn) {
+        firstTabBtn.click();
+        console.log("UX Fix: Automatically activated the first seating category.");
+    } else {
+        console.warn("UX Fix Warning: First category button element not found in DOM yet.");
+    }
+}
+
 function showMobileSection(sectionId, btn) {
     window.currentSection = sectionId;
     
