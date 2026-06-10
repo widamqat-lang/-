@@ -172,11 +172,23 @@ header {
     flex: 1;
 }
 
+.team-flag {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 30px;
+}
+
 .team-flag img {
-    width: 32px;
-    height: 22px;
+    width: 40px;
+    height: 28px;
     object-fit: contain;
-    vertical-align: middle;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+}
+
+.team-flag span {
+    font-size: 1.5rem;
 }
 
 .team-name {

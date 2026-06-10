@@ -392,12 +392,12 @@ function renderMatchCard(match) {
             </div>
             <div class="teams">
                 <div class="team">
-                    <div class="team-flag">${match.home_team_flag || '🏠'}</div>
+                    ${match.home_team_flag ? `<img src="${match.home_team_flag}" alt="${homeTeam}" class="team-flag" />` : '<span class="team-flag">🏠</span>'}
                     <div class="team-name">${homeTeam}</div>
                 </div>
                 <div class="vs">VS</div>
                 <div class="team">
-                    <div class="team-flag">${match.away_team_flag || '✈️'}</div>
+                    ${match.away_team_flag ? `<img src="${match.away_team_flag}" alt="${awayTeam}" class="team-flag" />` : '<span class="team-flag">✈️</span>'}
                     <div class="team-name">${awayTeam}</div>
                 </div>
             </div>
@@ -452,12 +452,12 @@ async function renderMatch(matchId) {
                 </div>
                 <div class="teams">
                     <div class="team">
-                        <div class="team-flag">${match.home_team_flag || '🏠'}</div>
+                        ${match.home_team_flag ? `<img src="${match.home_team_flag}" alt="${homeTeam}" class="team-flag" />` : '<span class="team-flag">🏠</span>'}
                         <div class="team-name">${homeTeam}</div>
                     </div>
                     <div class="vs">VS</div>
                     <div class="team">
-                        <div class="team-flag">${match.away_team_flag || '✈️'}</div>
+                        ${match.away_team_flag ? `<img src="${match.away_team_flag}" alt="${awayTeam}" class="team-flag" />` : '<span class="team-flag">✈️</span>'}
                         <div class="team-name">${awayTeam}</div>
                     </div>
                 </div>
@@ -888,8 +888,8 @@ async function renderAdminMatches() {
                                 </div>
                             </td>
                             <td style="padding: 15px;">${match.id}</td>
-                            <td style="padding: 15px;">${match.home_team_flag || ''} ${match.home_team}</td>
-                            <td style="padding: 15px;">${match.away_team_flag || ''} ${match.away_team}</td>
+                            <td style="padding: 15px;">${match.home_team_flag ? `<img src="${match.home_team_flag}" alt="${match.home_team}" style="width:30px; height:20px; object-fit:contain; vertical-align:middle; margin-right:5px;" />` : ''}${match.home_team}</td>
+                            <td style="padding: 15px;">${match.away_team_flag ? `<img src="${match.away_team_flag}" alt="${match.away_team}" style="width:30px; height:20px; object-fit:contain; vertical-align:middle; margin-right:5px;" />` : ''}${match.away_team}</td>
                             <td style="padding: 15px;">${stadiumName}</td>
                             <td style="padding: 15px;">${formatDate(match.match_date)}</td>
                             <td style="padding: 15px;">${formatPrice(match.min_price)}</td>
