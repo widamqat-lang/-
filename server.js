@@ -10,6 +10,34 @@ const db = new sqlite3.Database('./database.db', (err) => {
     else console.log('Connected to database');
 });
 
+// Clean corrupted flag data on startup
+db.serialize(() => {
+    db.all("SELECT id, home_team_flag, away_team_flag FROM matches WHERE home_team_flag LIKE '%<img%' OR away_team_flag LIKE '%<img%'", [], (err, rows) => {
+        if (err) console.error('Error checking flags:', err.message);
+        else if (rows.length > 0) {
+            console.log(`Found ${rows.length} matches with corrupted flags, cleaning...`);
+            rows.forEach(row => {
+                const cleanHome = extractCleanUrl(row.home_team_flag);
+                const cleanAway = extractCleanUrl(row.away_team_flag);
+                db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
+                    [cleanHome, cleanAway, row.id], (err) => {
+                        if (err) console.error('Error cleaning flag:', err.message);
+                    });
+            });
+            console.log('Flags cleaned successfully');
+        }
+    });
+});
+
+// Helper to extract clean URL
+function extractCleanUrl(flagUrl) {
+    if (!flagUrl) return '';
+    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)/);
+    if (urlMatch) return urlMatch[0];
+    if (/^https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
+    return '';
+}
+
 // Middleware to sanitize flag URLs in API responses
 const sanitizeFlags = (req, res, next) => {
     const originalJson = res.json.bind(res);
