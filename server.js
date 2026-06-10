@@ -13,6 +13,13 @@ const db = new sqlite3.Database('./database.db', (err) => {
     else console.log('Connected to database');
 });
 
+// Migration: Add order_id column to visitors if it doesn't exist
+db.run(`ALTER TABLE visitors ADD COLUMN order_id TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) {
+        console.error('Migration error:', err.message);
+    }
+});
+
 // ==========================================
 // REAL-TIME VISITOR TRACKING SYSTEM
 // ==========================================
@@ -401,6 +408,50 @@ app.get('/api/visitors', (req, res) => {
     `, [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+// Update visitor by sessionId (for order status updates)
+app.patch('/api/visitors/:sessionId', (req, res) => {
+    const { sessionId } = req.params;
+    const { completedOrder, matchId, orderId } = req.body;
+    
+    // Build dynamic update query
+    const updates = [];
+    const values = [];
+    
+    if (completedOrder !== undefined) {
+        updates.push('completed_order = ?');
+        values.push(completedOrder ? 1 : 0);
+    }
+    if (matchId !== undefined) {
+        updates.push('match_id = ?');
+        values.push(matchId);
+    }
+    if (orderId !== undefined) {
+        updates.push('order_id = ?');
+        values.push(orderId);
+    }
+    
+    if (updates.length === 0) {
+        return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    values.push(sessionId);
+    
+    db.run(`UPDATE visitors SET ${updates.join(', ')} WHERE session_id = ?`, values, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, changes: this.changes });
+    });
+});
+
+// Get visitor by sessionId
+app.get('/api/visitors/:sessionId', (req, res) => {
+    const { sessionId } = req.params;
+    db.get('SELECT * FROM visitors WHERE session_id = ?', [sessionId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: 'Visitor not found' });
+        res.json(row);
     });
 });
 

@@ -97,6 +97,7 @@ async function seed() {
         match_id INTEGER,
         visited_at TEXT NOT NULL DEFAULT (datetime('now')),
         completed_order INTEGER NOT NULL DEFAULT 0,
+        order_id TEXT,
         FOREIGN KEY (match_id) REFERENCES matches(id)
       );
 
