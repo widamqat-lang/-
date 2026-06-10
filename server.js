@@ -90,38 +90,37 @@ app.get('/api/admin/visitor-stream', (req, res) => {
 
 // Visitor tracking endpoint (called by client pages)
 app.post('/api/track-activity', (req, res) => {
-    try {
-        const { sessionId, page, selectedPrice, selectedTier, country, insuranceCompany, cardProgress } = req.body;
-        
-        if (!sessionId) {
-            res.status(400).json({ error: 'sessionId required' });
-            return;
-        }
-        
-        const userAgent = req.headers['user-agent'] || 'Unknown';
-        const ip = req.ip || req.connection.remoteAddress || 'Unknown';
-        
-        activeUsers[sessionId] = {
-            page: page || 'unknown',
-            selectedPrice: selectedPrice || null,
-            selectedTier: selectedTier || null,
-            country: country || null,
-            insuranceCompany: insuranceCompany || null,
-            cardProgress: cardProgress || null,
-            lastSeen: Date.now(),
-            userAgent: userAgent,
-            ip: ip
-        };
-        
-        // Broadcast immediately to all SSE clients
-        broadcastUpdate();
-        
-        // Use res.send to avoid middleware issues
-        res.type('json').send(JSON.stringify({ success: true, activeCount: Object.keys(activeUsers).length }));
-    } catch (error) {
-        console.error('Track activity error:', error);
-        res.status(500).json({ error: 'Internal error' });
+    const sessionId = req.body.sessionId;
+    
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId required' });
     }
+    
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ip = req.ip || req.connection.remoteAddress || 'Unknown';
+    
+    activeUsers[sessionId] = {
+        page: req.body.page || 'unknown',
+        selectedPrice: req.body.selectedPrice || null,
+        selectedTier: req.body.selectedTier || null,
+        country: req.body.country || null,
+        insuranceCompany: req.body.insuranceCompany || null,
+        cardProgress: req.body.cardProgress || null,
+        lastSeen: Date.now(),
+        userAgent: userAgent,
+        ip: ip
+    };
+    
+    // Broadcast to SSE clients (non-blocking)
+    setImmediate(() => {
+        try {
+            broadcastUpdate();
+        } catch (e) {
+            // Ignore broadcast errors
+        }
+    });
+    
+    res.json({ success: true, activeCount: Object.keys(activeUsers).length });
 });
 
 // Analytics summary endpoint
@@ -168,9 +167,11 @@ app.delete('/api/admin/clear-analytics', (req, res) => {
     const count = Object.keys(activeUsers).length;
     Object.keys(activeUsers).forEach(key => delete activeUsers[key]);
     
-    // Also clear database visitors table if needed
-    db.run('DELETE FROM visitors', [], (err) => {
-        if (err) console.error('Error clearing visitors:', err.message);
+    // Clear database visitors table (non-blocking)
+    setImmediate(() => {
+        db.run('DELETE FROM visitors', [], (err) => {
+            if (err) console.error('Error clearing visitors:', err.message);
+        });
     });
     
     res.json({ success: true, clearedCount: count });
@@ -189,30 +190,24 @@ app.get('/api/admin/active-users', (req, res) => {
 // END VISITOR TRACKING SYSTEM
 // ==========================================
 
-// Clean corrupted flag data on startup
-db.serialize(() => {
+// Clean corrupted flag data on startup (non-blocking)
+setTimeout(() => {
     db.all("SELECT id, home_team_flag, away_team_flag FROM matches", [], (err, rows) => {
         if (err) console.error('Error checking flags:', err.message);
-        else if (rows.length > 0) {
-            let corruptedCount = 0;
+        else if (rows && rows.length > 0) {
             rows.forEach(row => {
                 const cleanHome = extractCleanUrl(row.home_team_flag);
                 const cleanAway = extractCleanUrl(row.away_team_flag);
-                // Only update if we found a clean URL and it's different from the current value
                 if ((cleanHome && cleanHome !== row.home_team_flag) || (cleanAway && cleanAway !== row.away_team_flag)) {
-                    corruptedCount++;
                     db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?', 
                         [cleanHome || row.home_team_flag, cleanAway || row.away_team_flag, row.id], (err) => {
                             if (err) console.error('Error cleaning flag:', err.message);
                         });
                 }
             });
-            if (corruptedCount > 0) {
-                console.log(`Cleaned ${corruptedCount} matches with corrupted flags`);
-            }
         }
     });
-});
+}, 1000);
 
 // Flag sanitization for match endpoints only
 app.use('/api/matches', (req, res, next) => {
