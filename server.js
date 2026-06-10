@@ -123,9 +123,12 @@ app.get('/api/orders', (req, res) => {
 });
 
 // Admin login
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'worldcup2026';
+
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body;
-    if (username === 'admin' && password === 'admin123') {
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
         res.json({ success: true, token: 'admin-token-' + Date.now() });
     } else {
         res.status(401).json({ error: 'Invalid credentials' });
@@ -150,6 +153,17 @@ app.get('/api/settings', (req, res) => {
         const settings = {};
         rows.forEach(row => { settings[row.key] = row.value; });
         res.json(settings);
+    });
+});
+
+app.put('/api/settings/:key', (req, res) => {
+    const { key } = req.params;
+    const { value } = req.body;
+    if (!value) return res.status(400).json({ error: 'Value is required' });
+    
+    db.run('INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, datetime("now"))', [key, value], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 

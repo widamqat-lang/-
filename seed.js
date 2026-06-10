@@ -467,7 +467,7 @@ async function seed() {
     }
 
     // Insert default settings
-    await run('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', ['payment_link', 'https://paymath.com']);
+    await run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', ['payment_link', 'https://paymath.com']);
     console.log('Inserted default settings');
 
     // Insert default admin credentials
