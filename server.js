@@ -214,15 +214,13 @@ function extractCleanUrl(flagUrl) {
 const sanitizeFlags = (req, res, next) => {
     const originalJson = res.json.bind(res);
     res.json = function(data) {
-        if (Array.isArray(data)) {
-            data = data.map(item => ({
-                ...item,
-                home_team_flag: extractCleanUrl(item.home_team_flag),
-                away_team_flag: extractCleanUrl(item.away_team_flag)
-            }));
-        } else if (data && typeof data === 'object') {
-            data.home_team_flag = extractCleanUrl(data.home_team_flag);
-            data.away_team_flag = extractCleanUrl(data.away_team_flag);
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            // Only modify single objects (not arrays)
+            if (data.home_team_flag !== undefined || data.away_team_flag !== undefined) {
+                data = { ...data };
+                data.home_team_flag = extractCleanUrl(data.home_team_flag);
+                data.away_team_flag = extractCleanUrl(data.away_team_flag);
+            }
         }
         return originalJson(data);
     };
