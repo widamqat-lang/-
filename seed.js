@@ -127,7 +127,7 @@ async function seed() {
     descriptionAr: 'المباراة الافتتاحية لكأس العالم - المجموعة الأولى',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 250,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -147,7 +147,7 @@ async function seed() {
     descriptionAr: 'مباراة كندا الافتتاحية - المجموعة الثانية',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 150,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -167,7 +167,7 @@ async function seed() {
     descriptionAr: 'مباراة أمريكا الافتتاحية - المجموعة الرابعة',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 200,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -187,7 +187,7 @@ async function seed() {
     descriptionAr: 'مباراة في مرحلة المجموعات',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 180,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -207,7 +207,7 @@ async function seed() {
     descriptionAr: 'مباراة في مرحلة المجموعات',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 170,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -227,7 +227,7 @@ async function seed() {
     descriptionAr: 'مباراة في مرحلة المجموعات',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 160,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -247,7 +247,7 @@ async function seed() {
     descriptionAr: 'مباراة في مرحلة المجموعات',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 190,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -267,7 +267,7 @@ async function seed() {
     descriptionAr: 'مباراة في مرحلة المجموعات',
     stage: 'Group Stage',
     stageAr: 'مرحلة المجموعات',
-    minPrice: 150,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -287,7 +287,7 @@ async function seed() {
     descriptionAr: 'دور الـ 32',
     stage: 'Round of 32',
     stageAr: 'دور الـ 32',
-    minPrice: 300,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -307,7 +307,7 @@ async function seed() {
     descriptionAr: 'دور الـ 16',
     stage: 'Round of 16',
     stageAr: 'دور الـ 16',
-    minPrice: 450,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -327,7 +327,7 @@ async function seed() {
     descriptionAr: 'ربع النهائي',
     stage: 'Quarter-finals',
     stageAr: 'ربع النهائي',
-    minPrice: 600,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -347,7 +347,7 @@ async function seed() {
     descriptionAr: 'نصف النهائي',
     stage: 'Semi-finals',
     stageAr: 'نصف النهائي',
-    minPrice: 800,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -367,7 +367,7 @@ async function seed() {
     descriptionAr: 'مباراة المركز الثالث',
     stage: 'Third Place',
     stageAr: 'المركز الثالث',
-    minPrice: 500,
+    minPrice: 25,
     isActive: 1
   },
   {
@@ -387,7 +387,7 @@ async function seed() {
     descriptionAr: 'النهائي الكبير لكأس العالم',
     stage: 'Final',
     stageAr: 'النهائي',
-    minPrice: 1200,
+    minPrice: 25,
     isActive: 1
   }
     ];
