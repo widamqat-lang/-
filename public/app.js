@@ -389,6 +389,9 @@ async function renderMatch(matchId) {
             <div id="selected-seats-summary" style="margin-top: 30px; padding: 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
                 <h3>${t('selected')}: <span id="selected-count">0</span> ${state.language === 'ar' ? 'مقعد' : 'seats'}</h3>
                 <p>${t('price')}: <span id="selected-price">$0.00</span></p>
+                <div id="max-seats-msg" style="display: none; color: #ff9800; font-size: 12px; margin: 8px 0;">
+                    ${state.language === 'ar' ? `الحد الأقصى ${MAX_SEATS} مقاعد` : `Maximum ${MAX_SEATS} seats`}
+                </div>
                 <button id="checkout-btn" class="cta-button" onclick="navigate('checkout')" style="margin-top: 15px;" disabled>${t('checkout')}</button>
             </div>
         `;
@@ -397,6 +400,8 @@ async function renderMatch(matchId) {
     }
 }
 
+const MAX_SEATS = 6;
+
 function toggleSeat(seatId, status, price) {
     if (status !== 'available') return;
     
@@ -404,18 +409,37 @@ function toggleSeat(seatId, status, price) {
     const index = state.selectedSeats.findIndex(s => s.id === seatId);
     
     if (index > -1) {
+        // Remove seat if already selected
         state.selectedSeats.splice(index, 1);
-        seatEl.classList.remove('selected');
+        if (seatEl) seatEl.classList.remove('selected');
     } else {
+        // Check max seats limit
+        if (state.selectedSeats.length >= MAX_SEATS) {
+            const msg = state.language === 'ar' 
+                ? `يمكنك اختيار ${MAX_SEATS} مقاعد كحد أقصى` 
+                : `You can select up to ${MAX_SEATS} seats maximum`;
+            alert(msg);
+            return;
+        }
+        // Add new seat
         state.selectedSeats.push({ id: seatId, price });
-        seatEl.classList.add('selected');
+        if (seatEl) seatEl.classList.add('selected');
     }
     
     // Update summary
+    updateSeatsSummary();
+}
+
+function updateSeatsSummary() {
     const countEl = document.getElementById('selected-count');
     const priceEl = document.getElementById('selected-price');
     const checkoutBtn = document.getElementById('checkout-btn');
+    const maxSeatsMsg = document.getElementById('max-seats-msg');
+    const mobileCountEl = document.getElementById('mobile-seat-count');
+    const mobileMaxMsg = document.getElementById('mobile-max-msg');
+    const mobilePriceEl = document.getElementById('mobile-seat-total');
     
+    // Update desktop summary
     if (countEl) {
         countEl.textContent = state.selectedSeats.length;
     }
@@ -426,6 +450,33 @@ function toggleSeat(seatId, status, price) {
     
     if (checkoutBtn) {
         checkoutBtn.disabled = state.selectedSeats.length === 0;
+    }
+    
+    // Show max seats warning on desktop
+    if (maxSeatsMsg) {
+        if (state.selectedSeats.length >= MAX_SEATS) {
+            maxSeatsMsg.style.display = 'block';
+        } else {
+            maxSeatsMsg.style.display = 'none';
+        }
+    }
+    
+    // Update mobile summary
+    if (mobileCountEl) {
+        mobileCountEl.textContent = state.selectedSeats.length;
+    }
+    
+    if (mobilePriceEl) {
+        mobilePriceEl.textContent = '$' + state.selectedSeats.reduce((sum, s) => sum + (s.price || 0), 0).toFixed(2);
+    }
+    
+    // Show max seats warning on mobile
+    if (mobileMaxMsg) {
+        if (state.selectedSeats.length >= MAX_SEATS) {
+            mobileMaxMsg.style.display = 'inline';
+        } else {
+            mobileMaxMsg.style.display = 'none';
+        }
     }
 }
 
@@ -1852,6 +1903,9 @@ async function renderSeatPicker(matchId) {
                     <div class="selection-count">
                         <span class="count-num" id="mobile-seat-count">${state.selectedSeats.length}</span>
                         <span class="count-label">${state.language === 'ar' ? 'مقعد' : 'seats'}</span>
+                        <span id="mobile-max-msg" style="display: none; color: #ff9800; font-size: 11px;">
+                            / ${MAX_SEATS} ${state.language === 'ar' ? 'أقصى' : 'max'}
+                        </span>
                     </div>
                     <div class="selection-price">
                         <span class="price-num" id="mobile-seat-total">$${state.selectedSeats.reduce((sum, s) => sum + s.price, 0).toFixed(2)}</span>
@@ -1984,6 +2038,15 @@ function showMobileSection(sectionId, btn) {
 
 // Select one seat from a row
 function selectRowSeats(sectionId, rowId, availableCount, price) {
+    // Check max seats limit
+    if (state.selectedSeats.length >= MAX_SEATS) {
+        const msg = state.language === 'ar' 
+            ? `يمكنك اختيار ${MAX_SEATS} مقاعد كحد أقصى` 
+            : `You can select up to ${MAX_SEATS} seats maximum`;
+        alert(msg);
+        return;
+    }
+    
     const section = window.currentSeatsData[sectionId];
     const seats = section.rows[rowId];
     const availableSeats = seats.filter(s => s.status === 'available');
@@ -2027,8 +2090,17 @@ function removeRowSeats(sectionId, rowId) {
 // Update mobile selection UI
 function updateMobileSelectionUI() {
     // Update count and total
-    document.getElementById('mobile-seat-count').textContent = state.selectedSeats.length;
-    document.getElementById('mobile-seat-total').textContent = '$' + state.selectedSeats.reduce((sum, s) => sum + s.price, 0).toFixed(2);
+    const mobileCountEl = document.getElementById('mobile-seat-count');
+    const mobilePriceEl = document.getElementById('mobile-seat-total');
+    const mobileMaxMsg = document.getElementById('mobile-max-msg');
+    
+    if (mobileCountEl) mobileCountEl.textContent = state.selectedSeats.length;
+    if (mobilePriceEl) mobilePriceEl.textContent = '$' + state.selectedSeats.reduce((sum, s) => sum + (s.price || 0), 0).toFixed(2);
+    
+    // Show max seats warning
+    if (mobileMaxMsg) {
+        mobileMaxMsg.style.display = state.selectedSeats.length >= MAX_SEATS ? 'inline' : 'none';
+    }
     
     // Update preview
     const preview = document.getElementById('mobile-seats-preview');
