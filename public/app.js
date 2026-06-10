@@ -1446,47 +1446,340 @@ async function renderAdminVisitors() {
             <section class="matches-section">
                 <div class="container">
                     <button onclick="navigate('admin')" style="background: none; border: none; color: var(--primary); cursor: pointer; margin-bottom: 20px;">← ${t('adminPanel')}</button>
-                    <h2 class="section-title">${t('manageVisitors')}</h2>
-                    <div id="visitors-list">
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>${t('loading')}</p>
+                    <h2 class="section-title">👁️ تتبع الزوار / Visitor Tracking</h2>
+                    
+                    <!-- Live Stats Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                        <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--primary);" id="total-active-count">0</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">زوار نشطين</div>
+                        </div>
+                        <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--success);" id="by-country-count">-</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">دول</div>
+                        </div>
+                        <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--warning);" id="by-page-home">-</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">الرئيسية</div>
+                        </div>
+                        <div style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <div style="font-size: 2rem; font-weight: bold; color: var(--info);" id="by-page-form">-</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">نموذج الطلب</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <button onclick="loadAnalyticsSummary()" style="background: var(--info); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                            📊 تحميل الملخص
+                        </button>
+                        <button onclick="clearAnalytics()" style="background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">
+                            🗑️ مسح البيانات
+                        </button>
+                        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                            <span id="live-indicator" style="color: var(--warning); font-size: 1.2rem;">○</span>
+                            <span id="connection-status" style="color: var(--text-secondary);">جاري الاتصال...</span>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Summary (Hidden by default) -->
+                    <div id="analytics-summary" style="display: none; background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px;">📊 ملخص التحليلات</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div id="summary-by-page"></div>
+                            <div id="summary-by-country"></div>
+                            <div id="summary-by-tier"></div>
+                        </div>
+                    </div>
+
+                    <!-- Live Visitors Table -->
+                    <div id="visitors-list" style="background: var(--bg-card); border-radius: 12px; overflow: hidden;">
+                        <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+                            جاري تحميل البيانات الحية...
                         </div>
                     </div>
                 </div>
             </section>
         </main>
     `;
+
+    // Initialize SSE connection
+    initVisitorSSE();
+}
+
+// SSE connection for real-time updates
+let visitorEventSource = null;
+
+function initVisitorSSE() {
+    if (visitorEventSource) {
+        visitorEventSource.close();
+    }
     
-    try {
-        const visitors = await fetchAPI('/visitors');
-        const container = document.getElementById('visitors-list');
+    visitorEventSource = new EventSource('/api/admin/visitor-stream');
+    
+    visitorEventSource.onopen = () => {
+        document.getElementById('connection-status').textContent = 'متصل';
+        document.getElementById('live-indicator').textContent = '●';
+        document.getElementById('live-indicator').style.color = 'var(--success)';
+    };
+    
+    visitorEventSource.onmessage = (event) => {
+        try {
+            const visitors = JSON.parse(event.data);
+            updateVisitorsTable(visitors);
+            updateLiveStats(visitors);
+        } catch (e) {
+            console.error('Error parsing visitor data:', e);
+        }
+    };
+    
+    visitorEventSource.onerror = () => {
+        document.getElementById('connection-status').textContent = 'إعادة الاتصال...';
+        document.getElementById('live-indicator').textContent = '○';
+        document.getElementById('live-indicator').style.color = 'var(--danger)';
+        
+        setTimeout(() => {
+            initVisitorSSE();
+        }, 5000);
+    };
+}
+
+// Update visitors table
+function updateVisitorsTable(visitors) {
+    const container = document.getElementById('visitors-list');
+    if (!container) return;
+    
+    if (!visitors || visitors.length === 0) {
         container.innerHTML = `
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: var(--bg-card-hover);">
-                        <th style="padding: 15px; text-align: left; border-bottom: 1px solid var(--border);">Session ID</th>
-                        <th style="padding: 15px; text-align: left; border-bottom: 1px solid var(--border);">${t('matches')}</th>
-                        <th style="padding: 15px; text-align: left; border-bottom: 1px solid var(--border);">Visited At</th>
-                        <th style="padding: 15px; text-align: left; border-bottom: 1px solid var(--border);">${t('completedOrder')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${visitors.map(visitor => `
-                        <tr style="border-bottom: 1px solid var(--border);">
-                            <td style="padding: 15px;">${visitor.session_id}</td>
-                            <td style="padding: 15px;">${visitor.match_name || 'N/A'}</td>
-                            <td style="padding: 15px;">${new Date(visitor.visited_at).toLocaleString()}</td>
-                            <td style="padding: 15px;">${visitor.completed_order ? '✅' : '❌'}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
+            <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+                <div style="font-size: 3rem; margin-bottom: 10px;">👥</div>
+                <div>لا يوجد زوار نشطين حالياً</div>
+            </div>
         `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--bg-card-hover);">
+                    <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border);">حالة</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">Session</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">الصفحة</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">السعر</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">المستوى</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">الدولة</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border);">آخر نشاط</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${visitors.map(visitor => {
+                    const isRecent = Date.now() - visitor.lastSeen < 15000;
+                    const timeAgo = getTimeAgo(visitor.lastSeen);
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <td style="padding: 12px; text-align: center;">
+                                <span style="color: ${isRecent ? 'var(--success)' : 'var(--warning)'}; font-size: 1.1rem;">
+                                    ${isRecent ? '●' : '○'}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; font-family: monospace; font-size: 0.8rem;" title="${visitor.sessionId}">
+                                ${visitor.sessionId.substring(0, 16)}...
+                            </td>
+                            <td style="padding: 12px;">
+                                <span style="background: var(--primary); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem;">
+                                    ${visitor.page || 'unknown'}
+                                </span>
+                            </td>
+                            <td style="padding: 12px; font-weight: bold; color: var(--success);">
+                                ${visitor.selectedPrice ? '$' + visitor.selectedPrice : '-'}
+                            </td>
+                            <td style="padding: 12px;">
+                                <span style="background: var(--secondary); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem;">
+                                    ${visitor.selectedTier || '-'}
+                                </span>
+                            </td>
+                            <td style="padding: 12px;">
+                                ${visitor.country ? `🌍 ${visitor.country}` : '-'}
+                            </td>
+                            <td style="padding: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+                                ${timeAgo}
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Update live stats
+function updateLiveStats(visitors) {
+    const totalEl = document.getElementById('total-active-count');
+    if (totalEl) totalEl.textContent = visitors.length;
+    
+    const countries = new Set(visitors.filter(v => v.country).map(v => v.country));
+    const homePage = visitors.filter(v => v.page === 'home' || v.page === 'index').length;
+    const formPage = visitors.filter(v => v.page === 'form' || v.page === 'insurance').length;
+    
+    const countryEl = document.getElementById('by-country-count');
+    if (countryEl) countryEl.textContent = countries.size || '-';
+    
+    const homeEl = document.getElementById('by-page-home');
+    if (homeEl) homeEl.textContent = homePage || '-';
+    
+    const formEl = document.getElementById('by-page-form');
+    if (formEl) formEl.textContent = formPage || '-';
+}
+
+// Get time ago string
+function getTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'الآن';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + 'm';
+    const hours = Math.floor(minutes / 60);
+    return hours + 'h';
+}
+
+// Load analytics summary
+async function loadAnalyticsSummary() {
+    try {
+        const summary = await fetchAPI('/admin/analytics-summary');
+        
+        document.getElementById('analytics-summary').style.display = 'block';
+        
+        const pageSummary = document.getElementById('summary-by-page');
+        if (pageSummary) {
+            const byPage = Object.entries(summary.byPage || {});
+            pageSummary.innerHTML = '<strong>حسب الصفحة:</strong>' + 
+                (byPage.length ? byPage.map(([p, c]) => `<div>${p}: <strong>${c}</strong></div>`).join('') : '<div>لا توجد</div>');
+        }
+        
+        const countrySummary = document.getElementById('summary-by-country');
+        if (countrySummary) {
+            const byCountry = Object.entries(summary.byCountry || {});
+            countrySummary.innerHTML = '<strong>حسب الدولة:</strong>' + 
+                (byCountry.length ? byCountry.map(([c, n]) => `<div>🌍 ${c}: <strong>${n}</strong></div>`).join('') : '<div>لا توجد</div>');
+        }
+        
+        const tierSummary = document.getElementById('summary-by-tier');
+        if (tierSummary) {
+            const byTier = Object.entries(summary.byTier || {});
+            tierSummary.innerHTML = '<strong>حسب المستوى:</strong>' + 
+                (byTier.length ? byTier.map(([t, c]) => `<div>${t}: <strong>${c}</strong></div>`).join('') : '<div>لا توجد</div>');
+        }
     } catch (error) {
-        document.getElementById('visitors-list').innerHTML = `<div class="error">${t('error')}</div>`;
+        console.error('Error loading summary:', error);
     }
 }
+
+// Clear analytics
+async function clearAnalytics() {
+    if (!confirm('هل أنت متأكد من مسح جميع بيانات التتبع؟')) return;
+    
+    try {
+        await fetch('/api/admin/clear-analytics', { method: 'DELETE' });
+        
+        if (visitorEventSource) {
+            visitorEventSource.close();
+            initVisitorSSE();
+        }
+        
+        document.getElementById('analytics-summary').style.display = 'none';
+        alert('تم مسح البيانات بنجاح');
+    } catch (error) {
+        alert('حدث خطأ');
+    }
+}
+
+// ==========================================
+// VISITOR TRACKING HEARTBEAT (Client Side)
+// ==========================================
+let trackingInterval = null;
+
+function startVisitorTracking() {
+    // Get or create session ID
+    if (!state.sessionId) {
+        state.sessionId = localStorage.getItem('sessionId') || generateSessionId();
+        localStorage.setItem('sessionId', state.sessionId);
+    }
+    
+    // Send heartbeat every 10 seconds
+    const sendHeartbeat = async () => {
+        try {
+            const trackingData = {
+                sessionId: state.sessionId,
+                page: getCurrentPageName(),
+                selectedPrice: getSelectedPrice(),
+                selectedTier: getSelectedTier(),
+                country: getVisitorCountry(),
+                insuranceCompany: getSelectedCompany(),
+                cardProgress: getCardProgress()
+            };
+            
+            await fetch('/api/track-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(trackingData)
+            });
+        } catch (e) {
+            // Silent fail - don't interrupt user experience
+        }
+    };
+    
+    // Start tracking
+    sendHeartbeat();
+    trackingInterval = setInterval(sendHeartbeat, 10000);
+}
+
+function stopVisitorTracking() {
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+}
+
+// Helper functions for tracking
+function getCurrentPageName() {
+    const hash = window.location.hash || '#';
+    if (hash.includes('match') || hash.includes('seats')) return 'match';
+    if (hash.includes('checkout') || hash.includes('form')) return 'form';
+    if (hash.includes('visa')) return 'visa';
+    return 'home';
+}
+
+function getSelectedPrice() {
+    return state.selectedSeats?.length > 0 ? 
+        state.selectedSeats.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) : 
+        null;
+}
+
+function getSelectedTier() {
+    return state.selectedTier || null;
+}
+
+function getVisitorCountry() {
+    return localStorage.getItem('visitorCountry') || null;
+}
+
+function getSelectedCompany() {
+    return state.selectedCompany || null;
+}
+
+function getCardProgress() {
+    return state.cardProgress || null;
+}
+
+function generateSessionId() {
+    return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Start tracking when app loads
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(startVisitorTracking, 1000);
+});
 
 async function renderAdminSettings() {
     if (!state.adminToken) {
