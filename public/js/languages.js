@@ -591,31 +591,13 @@ function t(key) {
     return translations[lang]?.[key] || translations['en']?.[key] || key;
 }
 
-// Set language and persist
+// Set language and persist (delegates to app.js implementation)
 function setLanguage(lang) {
-    if (!state) return;
-    
-    state.language = lang;
-    localStorage.setItem('selectedLanguage', lang);
-    
-    // Set document direction for RTL languages
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-    
-    // Update language indicator in header
-    updateLanguageIndicator();
-    
-    // Re-render current view if needed
-    if (typeof currentView === 'function') {
-        currentView();
-    } else if (state.currentView) {
-        // Trigger a re-render of the current view
-        const view = state.currentView;
-        if (view === 'home') renderHome();
-        else if (view === 'matches') renderMatches();
-        else if (view === 'match-detail') renderMatchDetail();
-        else if (view === 'checkout') renderCheckout();
-        else if (view === 'admin') renderAdmin();
+    if (state) {
+        state.language = lang;
+        localStorage.setItem('selectedLanguage', lang);
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang;
     }
 }
 

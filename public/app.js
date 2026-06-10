@@ -23,23 +23,24 @@ const API_URL = '/api';
 
 // Helper Functions
 function t(key) {
-    if (typeof window.t === 'function') {
-        return window.t(key);
-    }
-    return translations?.[state.language]?.[key] || translations?.en?.[key] || key;
+    // Use translations from languages.js if available, otherwise use fallback
+    const translationsObj = window.translations || {};
+    const lang = state.language || 'en';
+    return translationsObj[lang]?.[key] || translationsObj['en']?.[key] || key;
 }
 
 function setLanguage(lang) {
-    if (typeof window.setLanguage === 'function') {
-        window.setLanguage(lang);
-        return;
-    }
-    
-    // Fallback if languages.js is not loaded
+    // Update state
     state.language = lang;
     localStorage.setItem('selectedLanguage', lang);
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
+    
+    // Re-render current view
+    if (state.currentView === 'home') renderHome();
+    else if (state.currentView === 'matches') renderMatches();
+    else if (state.currentView === 'match-detail') renderMatchDetail();
+    else if (state.currentView === 'checkout') renderCheckout();
 }
 
 // Initialize direction based on language
