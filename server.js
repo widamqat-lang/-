@@ -5,6 +5,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Body parsing MUST be first
+app.use(express.json());
+
 const db = new sqlite3.Database('./database.db', (err) => {
     if (err) console.error(err.message);
     else console.log('Connected to database');
@@ -209,6 +212,8 @@ setTimeout(() => {
     });
 }, 1000);
 
+app.use(express.static('public'));
+
 // Flag sanitization for match endpoints only
 app.use('/api/matches', (req, res, next) => {
     const originalJson = res.json.bind(res);
@@ -222,9 +227,6 @@ app.use('/api/matches', (req, res, next) => {
     };
     next();
 });
-
-app.use(express.static('public'));
-app.use(express.json());
 
 // Sitemap
 app.get('/sitemap.xml', (req, res) => {
