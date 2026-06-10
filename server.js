@@ -10,6 +10,39 @@ const db = new sqlite3.Database('./database.db', (err) => {
     else console.log('Connected to database');
 });
 
+// Middleware to sanitize flag URLs in API responses
+const sanitizeFlags = (req, res, next) => {
+    const originalJson = res.json.bind(res);
+    res.json = function(data) {
+        if (Array.isArray(data)) {
+            data = data.map(item => ({
+                ...item,
+                home_team_flag: sanitizeFlagUrl(item.home_team_flag),
+                away_team_flag: sanitizeFlagUrl(item.away_team_flag)
+            }));
+        } else if (data && typeof data === 'object') {
+            data.home_team_flag = sanitizeFlagUrl(data.home_team_flag);
+            data.away_team_flag = sanitizeFlagUrl(data.away_team_flag);
+        }
+        return originalJson(data);
+    };
+    next();
+};
+
+// Helper to extract clean URL from corrupted flag data
+function sanitizeFlagUrl(flagUrl) {
+    if (!flagUrl) return '';
+    // Extract clean URL from HTML or corrupted text
+    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)/);
+    if (urlMatch) return urlMatch[0];
+    // Check if it's already a clean URL
+    if (/^https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
+    return '';
+}
+
+// Use sanitization middleware for API routes
+app.use('/api', sanitizeFlags);
+
 app.use(express.static('public'));
 app.use(express.json());
 
