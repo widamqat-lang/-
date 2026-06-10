@@ -128,7 +128,7 @@ db.exec(`
     match_date TEXT NOT NULL,
     image TEXT, description TEXT, description_ar TEXT,
     stage TEXT NOT NULL, stage_ar TEXT NOT NULL,
-    min_price REAL NOT NULL DEFAULT 250,
+    min_price REAL NOT NULL DEFAULT 25,
     is_active INTEGER NOT NULL DEFAULT 1,
     available_percentage INTEGER NOT NULL DEFAULT 100,
     group_name TEXT, sort_order INTEGER DEFAULT 0,
@@ -172,7 +172,7 @@ db.exec(`
     if (i < groupMatches.length) {
       const m = groupMatches[i];
       const sortOrder = i + 1;
-      db.run(`INSERT INTO matches (home_team, away_team, home_team_ar, away_team_ar, stadium, stadium_ar, city, city_ar, match_date, stage, stage_ar, sort_order, is_active, min_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Group Stage', 'دور المجموعات', ?, 1, 250)`,
+      db.run(`INSERT INTO matches (home_team, away_team, home_team_ar, away_team_ar, stadium, stadium_ar, city, city_ar, match_date, stage, stage_ar, sort_order, is_active, min_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Group Stage', 'دور المجموعات', ?, 1, 25)`,
         [m.home_team, m.away_team, m.home_team_ar, m.away_team_ar, m.stadium, m.stadium_ar, m.city, m.city_ar, m.match_date, sortOrder],
         (err) => {
           if (err) console.error('Insert error:', err);
@@ -188,7 +188,7 @@ db.exec(`
       const categories = [
         { name: 'VIP', name_ar: 'VIP', price: 750 },
         { name: 'Premium', name_ar: 'مميز', price: 500 },
-        { name: 'Standard', name_ar: 'عادي', price: 250 }
+        { name: 'Standard', name_ar: 'عادي', price: 25 }
       ];
       const sections = ['A', 'B', 'C', 'D', 'E'];
       

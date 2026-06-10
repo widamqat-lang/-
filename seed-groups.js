@@ -170,8 +170,8 @@ db.exec(`
       INSERT INTO matches (
         home_team, away_team, home_team_ar, away_team_ar,
         stadium, stadium_ar, city, city_ar, match_date,
-        stage, stage_ar, group_name, sort_order, is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Group Stage', 'دور المجموعات', ?, ?, 1)
+        stage, stage_ar, group_name, sort_order, is_active, min_price
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Group Stage', 'دور المجموعات', ?, ?, 1, 25)
     `, [
       match.home_team, match.away_team, match.home_team_ar, match.away_team_ar,
       match.stadium, match.stadium_ar, match.city, match.city_ar, match.match_date,
