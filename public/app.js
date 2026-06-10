@@ -1092,13 +1092,17 @@ async function renderAdminAddMatch() {
         e.preventDefault();
         const formData = new FormData(this);
         
+        // Sanitize flag URLs
+        const homeFlag = sanitizeFlagUrl(formData.get('homeTeamFlag'));
+        const awayFlag = sanitizeFlagUrl(formData.get('awayTeamFlag'));
+        
         const matchData = {
             homeTeam: formData.get('homeTeam'),
             homeTeamAr: formData.get('homeTeamAr'),
             awayTeam: formData.get('awayTeam'),
             awayTeamAr: formData.get('awayTeamAr'),
-            homeTeamFlag: formData.get('homeTeamFlag') || '',
-            awayTeamFlag: formData.get('awayTeamFlag') || '',
+            homeTeamFlag: homeFlag,
+            awayTeamFlag: awayFlag,
             stadiumId: parseInt(formData.get('stadiumId')) || 1,
             stadium: formData.get('stadium'),
             stadiumAr: formData.get('stadiumAr'),
@@ -1300,10 +1304,25 @@ async function editMatch(matchId) {
     setTimeout(initFlagAutoUpdate, 100);
 }
 
+// Sanitize flag URL - extract only clean image URL
+function sanitizeFlagUrl(flagUrl) {
+    if (!flagUrl) return '';
+    // Extract clean URL from any input (HTML, text, etc.)
+    const urlMatch = String(flagUrl).match(/https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)/);
+    if (urlMatch) return urlMatch[0];
+    // Check if it's already a clean URL
+    if (/^https:\/\/flagcdn\.com\/[^\s"<>]+\.(png|jpg|svg)$/.test(flagUrl)) return flagUrl;
+    return '';
+}
+
 async function updateMatch(event, matchId) {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
+
+    // Sanitize flag URLs before sending
+    const homeFlag = sanitizeFlagUrl(formData.get('home_team_flag'));
+    const awayFlag = sanitizeFlagUrl(formData.get('away_team_flag'));
 
     try {
         await fetchAPI(`/matches/${matchId}`, {
@@ -1311,10 +1330,10 @@ async function updateMatch(event, matchId) {
             body: JSON.stringify({
                 home_team: formData.get('home_team'),
                 home_team_ar: formData.get('home_team_ar'),
-                home_team_flag: formData.get('home_team_flag'),
+                home_team_flag: homeFlag,
                 away_team: formData.get('away_team'),
                 away_team_ar: formData.get('away_team_ar'),
-                away_team_flag: formData.get('away_team_flag'),
+                away_team_flag: awayFlag,
                 match_date: formData.get('match_date'),
                 stadium: formData.get('stadium'),
                 stadium_ar: formData.get('stadium_ar'),
