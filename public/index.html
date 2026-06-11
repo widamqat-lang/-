@@ -238,5 +238,14 @@
     <div id="app"></div>
     <script src="js/languages.js"></script>
     <script src="app.js"></script>
+    <script>
+        console.log('Page loaded, checking state...');
+        console.log('translations available:', typeof translations !== 'undefined');
+        console.log('init function available:', typeof init !== 'undefined');
+        if (typeof init !== 'undefined') {
+            console.log('Calling init manually...');
+            init();
+        }
+    </script>
 </body>
 </html>
