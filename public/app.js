@@ -2566,6 +2566,9 @@ function updateAddFlagStatus(team) {
 
 // Initialize
 function init() {
+    console.log('Initializing app...');
+    console.log('Path:', window.location.pathname);
+    
     // Load saved language
     const savedLang = localStorage.getItem('language');
     if (savedLang) {
@@ -2612,11 +2615,13 @@ function init() {
         const matchId = path.split('/')[2];
         if (matchId) {
             view = 'seat-picker';
+            console.log('Navigating to seat-picker with matchId:', matchId);
             navigate(view, matchId);
             return;
         }
     }
     
+    console.log('Final view:', view);
     navigate(view);
 }
 
