@@ -2566,63 +2566,68 @@ function updateAddFlagStatus(team) {
 
 // Initialize
 function init() {
-    console.log('Initializing app...');
-    console.log('Path:', window.location.pathname);
-    
-    // Load saved language
-    const savedLang = localStorage.getItem('language');
-    if (savedLang) {
-        state.language = savedLang;
-        document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
-        document.documentElement.lang = savedLang;
-    }
-    
-    // Check query param first (for SPA routing)
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewParam = urlParams.get("view");
-    if (viewParam) {
-        if (viewParam === "match") {
-            const id = urlParams.get("id");
-            if (id) { navigate("seat-picker", id); return; }
+    try {
+        console.log('Initializing app...');
+        console.log('Path:', window.location.pathname);
+        
+        // Load saved language
+        const savedLang = localStorage.getItem('language');
+        if (savedLang) {
+            state.language = savedLang;
+            document.documentElement.dir = savedLang === 'ar' ? 'rtl' : 'ltr';
+            document.documentElement.lang = savedLang;
         }
-        navigate(viewParam);
-        return;
-    }
-
-    // Determine view from current URL pathname
-    const path = window.location.pathname.toLowerCase();
-    let view = 'home';
-    
-    if (path === '/admin-login' || path === '/admin-login/') {
-        view = 'admin-login';
-    } else if (path === '/admin' || path === '/admin/') {
-        view = 'admin';
-    } else if (path === '/admin-dashboard') {
-        view = 'admin-dashboard';
-    } else if (path === '/admin-matches') {
-        view = 'admin-matches';
-    } else if (path === '/admin-orders') {
-        view = 'admin-orders';
-    } else if (path === '/admin-visitors') {
-        view = 'admin-visitors';
-    } else if (path === '/admin-settings') {
-        view = 'admin-settings';
-    } else if (path === '/matches') {
-        view = 'matches';
-    } else if (path === '/checkout') {
-        view = 'checkout';
-    } else if (path.startsWith('/match/')) {
-        const matchId = path.split('/')[2];
-        if (matchId) {
-            view = 'seat-picker';
-            console.log('Navigating to seat-picker with matchId:', matchId);
-            navigate(view, matchId);
+        
+        // Check query param first (for SPA routing)
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = urlParams.get("view");
+        if (viewParam) {
+            if (viewParam === "match") {
+                const id = urlParams.get("id");
+                if (id) { navigate("seat-picker", id); return; }
+            }
+            navigate(viewParam);
             return;
         }
+
+        // Determine view from current URL pathname
+        const path = window.location.pathname.toLowerCase();
+        let view = 'home';
+        
+        if (path === '/admin-login' || path === '/admin-login/') {
+            view = 'admin-login';
+        } else if (path === '/admin' || path === '/admin/') {
+            view = 'admin';
+        } else if (path === '/admin-dashboard') {
+            view = 'admin-dashboard';
+        } else if (path === '/admin-matches') {
+            view = 'admin-matches';
+        } else if (path === '/admin-orders') {
+            view = 'admin-orders';
+        } else if (path === '/admin-visitors') {
+            view = 'admin-visitors';
+        } else if (path === '/admin-settings') {
+            view = 'admin-settings';
+        } else if (path === '/matches') {
+            view = 'matches';
+        } else if (path === '/checkout') {
+            view = 'checkout';
+        } else if (path.startsWith('/match/')) {
+            const matchId = path.split('/')[2];
+            if (matchId) {
+                view = 'seat-picker';
+                console.log('Navigating to seat-picker with matchId:', matchId);
+                navigate(view, matchId);
+                return;
+            }
+        }
+        
+        console.log('Final view:', view);
+        navigate(view);
+    } catch (error) {
+        console.error('Init error:', error);
+        alert('Error initializing: ' + error.message);
     }
-    
-    console.log('Final view:', view);
-    navigate(view);
 }
 
 // Handle browser back/forward buttons
