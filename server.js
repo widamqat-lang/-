@@ -465,6 +465,120 @@ app.get('/api/settings', (req, res) => {
     });
 });
 
+// Flag URL mapping for auto-detection
+const countryFlags = {
+    'mexico': 'https://flagcdn.com/w80/mx.png', 'mx': 'https://flagcdn.com/w80/mx.png',
+    'canada': 'https://flagcdn.com/w80/ca.png', 'ca': 'https://flagcdn.com/w80/ca.png',
+    'usa': 'https://flagcdn.com/w80/us.png', 'united states': 'https://flagcdn.com/w80/us.png', 'us': 'https://flagcdn.com/w80/us.png',
+    'brazil': 'https://flagcdn.com/w80/br.png', 'br': 'https://flagcdn.com/w80/br.png',
+    'argentina': 'https://flagcdn.com/w80/ar.png', 'ar': 'https://flagcdn.com/w80/ar.png',
+    'paraguay': 'https://flagcdn.com/w80/py.png', 'py': 'https://flagcdn.com/w80/py.png',
+    'chile': 'https://flagcdn.com/w80/cl.png', 'cl': 'https://flagcdn.com/w80/cl.png',
+    'colombia': 'https://flagcdn.com/w80/co.png', 'co': 'https://flagcdn.com/w80/co.png',
+    'peru': 'https://flagcdn.com/w80/pe.png', 'pe': 'https://flagcdn.com/w80/pe.png',
+    'ecuador': 'https://flagcdn.com/w80/ec.png', 'ec': 'https://flagcdn.com/w80/ec.png',
+    'venezuela': 'https://flagcdn.com/w80/ve.png', 've': 'https://flagcdn.com/w80/ve.png',
+    'uruguay': 'https://flagcdn.com/w80/uy.png', 'uy': 'https://flagcdn.com/w80/uy.png',
+    'germany': 'https://flagcdn.com/w80/de.png', 'de': 'https://flagcdn.com/w80/de.png',
+    'france': 'https://flagcdn.com/w80/fr.png', 'fr': 'https://flagcdn.com/w80/fr.png',
+    'spain': 'https://flagcdn.com/w80/es.png', 'es': 'https://flagcdn.com/w80/es.png',
+    'england': 'https://flagcdn.com/w80/gb.png', 'uk': 'https://flagcdn.com/w80/gb.png', 'gb': 'https://flagcdn.com/w80/gb.png',
+    'italy': 'https://flagcdn.com/w80/it.png', 'it': 'https://flagcdn.com/w80/it.png',
+    'portugal': 'https://flagcdn.com/w80/pt.png', 'pt': 'https://flagcdn.com/w80/pt.png',
+    'netherlands': 'https://flagcdn.com/w80/nl.png', 'nl': 'https://flagcdn.com/w80/nl.png',
+    'belgium': 'https://flagcdn.com/w80/be.png', 'be': 'https://flagcdn.com/w80/be.png',
+    'switzerland': 'https://flagcdn.com/w80/ch.png', 'ch': 'https://flagcdn.com/w80/ch.png',
+    'austria': 'https://flagcdn.com/w80/at.png', 'at': 'https://flagcdn.com/w80/at.png',
+    'denmark': 'https://flagcdn.com/w80/dk.png', 'dk': 'https://flagcdn.com/w80/dk.png',
+    'sweden': 'https://flagcdn.com/w80/se.png', 'se': 'https://flagcdn.com/w80/se.png',
+    'norway': 'https://flagcdn.com/w80/no.png', 'no': 'https://flagcdn.com/w80/no.png',
+    'poland': 'https://flagcdn.com/w80/pl.png', 'pl': 'https://flagcdn.com/w80/pl.png',
+    'ukraine': 'https://flagcdn.com/w80/ua.png', 'ua': 'https://flagcdn.com/w80/ua.png',
+    'russia': 'https://flagcdn.com/w80/ru.png', 'ru': 'https://flagcdn.com/w80/ru.png',
+    'croatia': 'https://flagcdn.com/w80/hr.png', 'hr': 'https://flagcdn.com/w80/hr.png',
+    'serbia': 'https://flagcdn.com/w80/rs.png', 'rs': 'https://flagcdn.com/w80/rs.png',
+    'japan': 'https://flagcdn.com/w80/jp.png', 'jp': 'https://flagcdn.com/w80/jp.png',
+    'south korea': 'https://flagcdn.com/w80/kr.png', 'korea': 'https://flagcdn.com/w80/kr.png', 'kr': 'https://flagcdn.com/w80/kr.png',
+    'china': 'https://flagcdn.com/w80/cn.png', 'cn': 'https://flagcdn.com/w80/cn.png',
+    'qatar': 'https://flagcdn.com/w80/qa.png', 'qa': 'https://flagcdn.com/w80/qa.png',
+    'uae': 'https://flagcdn.com/w80/ae.png', 'united arab emirates': 'https://flagcdn.com/w80/ae.png', 'ae': 'https://flagcdn.com/w80/ae.png',
+    'saudi': 'https://flagcdn.com/w80/sa.png', 'saudi arabia': 'https://flagcdn.com/w80/sa.png', 'sa': 'https://flagcdn.com/w80/sa.png',
+    'iran': 'https://flagcdn.com/w80/ir.png', 'ir': 'https://flagcdn.com/w80/ir.png',
+    'iraq': 'https://flagcdn.com/w80/iq.png', 'iq': 'https://flagcdn.com/w80/iq.png',
+    'morocco': 'https://flagcdn.com/w80/ma.png', 'ma': 'https://flagcdn.com/w80/ma.png',
+    'egypt': 'https://flagcdn.com/w80/eg.png', 'eg': 'https://flagcdn.com/w80/eg.png',
+    'nigeria': 'https://flagcdn.com/w80/ng.png', 'ng': 'https://flagcdn.com/w80/ng.png',
+    'senegal': 'https://flagcdn.com/w80/sn.png', 'sn': 'https://flagcdn.com/w80/sn.png',
+    'cameroon': 'https://flagcdn.com/w80/cm.png', 'cm': 'https://flagcdn.com/w80/cm.png',
+    'ghana': 'https://flagcdn.com/w80/gh.png', 'gh': 'https://flagcdn.com/w80/gh.png',
+    'algeria': 'https://flagcdn.com/w80/dz.png', 'dz': 'https://flagcdn.com/w80/dz.png',
+    'tunisia': 'https://flagcdn.com/w80/tn.png', 'tn': 'https://flagcdn.com/w80/tn.png',
+    'australia': 'https://flagcdn.com/w80/au.png', 'au': 'https://flagcdn.com/w80/au.png',
+    'new zealand': 'https://flagcdn.com/w80/nz.png', 'nz': 'https://flagcdn.com/w80/nz.png',
+    'turkey': 'https://flagcdn.com/w80/tr.png', 'tr': 'https://flagcdn.com/w80/tr.png',
+    'jamaica': 'https://flagcdn.com/w80/jm.png', 'jm': 'https://flagcdn.com/w80/jm.png',
+    'costa rica': 'https://flagcdn.com/w80/cr.png', 'cr': 'https://flagcdn.com/w80/cr.png',
+    'honduras': 'https://flagcdn.com/w80/hn.png', 'hn': 'https://flagcdn.com/w80/hn.png',
+    'panama': 'https://flagcdn.com/w80/pa.png', 'pa': 'https://flagcdn.com/w80/pa.png',
+    'palestine': 'https://flagcdn.com/w80/ps.png', 'ps': 'https://flagcdn.com/w80/ps.png',
+    'oman': 'https://flagcdn.com/w80/om.png', 'om': 'https://flagcdn.com/w80/om.png',
+    'jordan': 'https://flagcdn.com/w80/jo.png', 'jo': 'https://flagcdn.com/w80/jo.png',
+    'bahrain': 'https://flagcdn.com/w80/bh.png', 'bh': 'https://flagcdn.com/w80/bh.png',
+    'kuwait': 'https://flagcdn.com/w80/kw.png', 'kw': 'https://flagcdn.com/w80/kw.png',
+};
+
+// Get flag URL from team name
+function getFlagUrl(teamName) {
+    if (!teamName) return '';
+    const lower = teamName.toLowerCase().trim();
+    return countryFlags[lower] || '';
+}
+
+// Fix all empty flags (admin endpoint)
+app.post('/api/admin/fix-flags', (req, res) => {
+    db.all('SELECT id, home_team, away_team, home_team_flag, away_team_flag FROM matches', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        let fixed = 0;
+        let errors = 0;
+        
+        rows.forEach(match => {
+            let homeFlag = match.home_team_flag;
+            let awayFlag = match.away_team_flag;
+            let needsUpdate = false;
+            
+            // Fix home team flag
+            if (!homeFlag || homeFlag === '') {
+                const newHomeFlag = getFlagUrl(match.home_team);
+                if (newHomeFlag) {
+                    homeFlag = newHomeFlag;
+                    needsUpdate = true;
+                }
+            }
+            
+            // Fix away team flag
+            if (!awayFlag || awayFlag === '') {
+                const newAwayFlag = getFlagUrl(match.away_team);
+                if (newAwayFlag) {
+                    awayFlag = newAwayFlag;
+                    needsUpdate = true;
+                }
+            }
+            
+            if (needsUpdate) {
+                db.run('UPDATE matches SET home_team_flag = ?, away_team_flag = ? WHERE id = ?',
+                    [homeFlag || match.home_team_flag, awayFlag || match.away_team_flag, match.id],
+                    (err) => {
+                        if (err) errors++;
+                        else fixed++;
+                    });
+            }
+        });
+        
+        res.json({ success: true, fixed, errors, message: `Fixed ${fixed} matches, ${errors} errors` });
+    });
+});
+
 app.put('/api/settings/:key', (req, res) => {
     const { key } = req.params;
     const { value } = req.body;
