@@ -2528,8 +2528,17 @@ function initFlagAutoUpdate() {
     
     if (homeTeamInput && homePreview) {
         homeTeamInput.addEventListener('input', () => autoUpdateFlag(homeTeamInput, 'home_team_flag_preview', 'home_team_flag_value'));
-        // Also trigger on page load to set initial flag
+        // Also trigger on page load to set initial flag (even if empty, try to auto-detect from team name)
         autoUpdateFlag(homeTeamInput, 'home_team_flag_preview', 'home_team_flag_value');
+        // If flag is still empty but team name exists, auto-detect the flag
+        if (!homeInput.value && homeTeamInput.value) {
+            const flagUrl = getFlagUrl(homeTeamInput.value);
+            if (flagUrl) {
+                homePreview.src = flagUrl;
+                homePreview.style.display = 'inline-block';
+                homeInput.value = flagUrl;
+            }
+        }
     }
     
     // Away team
@@ -2541,6 +2550,15 @@ function initFlagAutoUpdate() {
         awayTeamInput.addEventListener('input', () => autoUpdateFlag(awayTeamInput, 'away_team_flag_preview', 'away_team_flag_value'));
         // Also trigger on page load to set initial flag
         autoUpdateFlag(awayTeamInput, 'away_team_flag_preview', 'away_team_flag_value');
+        // If flag is still empty but team name exists, auto-detect the flag
+        if (!awayInput.value && awayTeamInput.value) {
+            const flagUrl = getFlagUrl(awayTeamInput.value);
+            if (flagUrl) {
+                awayPreview.src = flagUrl;
+                awayPreview.style.display = 'inline-block';
+                awayInput.value = flagUrl;
+            }
+        }
     }
 }
 
