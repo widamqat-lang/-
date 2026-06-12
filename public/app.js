@@ -2006,7 +2006,7 @@ function renderMobileSeatsList(groupedSeats) {
                         ${hasSelection ? `
                             <button class="remove-btn" onclick="removeRowSeats('${sectionId}', '${rowId}')">−</button>
                         ` : ''}
-                        <button class="add-btn ${hasSelection ? 'added' : ''}" onclick="selectRowSeats('${sectionId}', '${rowId}')" ${addDisabled ? 'disabled' : ''}>+${canAddFromRow > 1 && !addDisabled ? canAddFromRow : ''}</button>
+                        <button class="add-btn ${hasSelection ? 'added' : ''}" onclick="selectRowSeats('${sectionId}', '${rowId}')" ${addDisabled ? 'disabled' : ''}>+1</button>
                     </div>
                 </div>
             `;
@@ -2041,8 +2041,8 @@ function showMobileSection(sectionId, btn) {
     document.getElementById(`mobile-section-${sectionId}`).classList.remove('hidden');
 }
 
-// Select seats from a row (add multiple seats)
-function selectRowSeats(sectionId, rowId, availableCount, price) {
+// Select ONE seat from a row (add 1 seat per click)
+function selectRowSeats(sectionId, rowId) {
     const section = window.currentSeatsData[sectionId];
     const seats = section.rows[rowId];
     const availableSeats = seats.filter(s => s.status === 'available');
@@ -2063,10 +2063,9 @@ function selectRowSeats(sectionId, rowId, availableCount, price) {
         return !state.selectedSeats.some(s => s.key === key);
     });
     
-    // Add seats up to remaining slots
-    const seatsToAdd = Math.min(remainingSlots, unselectedAvailable.length);
-    for (let i = 0; i < seatsToAdd; i++) {
-        const seat = unselectedAvailable[i];
+    // Add ONLY 1 seat per click
+    if (unselectedAvailable.length > 0) {
+        const seat = unselectedAvailable[0];
         state.selectedSeats.push({
             key: `${seat.section}-${seat.row}-${seat.seat_number}`,
             id: seat.id,
@@ -2080,12 +2079,18 @@ function selectRowSeats(sectionId, rowId, availableCount, price) {
     updateMobileSelectionUI();
 }
 
-// Remove all seats from a row
+// Remove ONE seat from a row (remove 1 seat per click)
 function removeRowSeats(sectionId, rowId) {
-    // Remove all selected seats from this row
-    state.selectedSeats = state.selectedSeats.filter(s => 
-        !(s.sectionId === sectionId && s.rowId === rowId)
+    // Find selected seats from this row
+    const rowSeats = state.selectedSeats.filter(s => 
+        s.sectionId === sectionId && s.rowId === rowId
     );
+    
+    // Remove ONLY 1 seat from this row
+    if (rowSeats.length > 0) {
+        const seatToRemove = rowSeats[rowSeats.length - 1]; // Remove last added
+        state.selectedSeats = state.selectedSeats.filter(s => s.key !== seatToRemove.key);
+    }
     
     updateMobileSelectionUI();
 }
